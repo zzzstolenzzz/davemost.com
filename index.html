@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>About Me AI</title>
+</head>
+<body>
+  <h1>Ask About Me</h1>
+  <input id="question" placeholder="Ask something..." />
+  <button onclick="ask()">Ask</button>
+
+  <p id="response"></p>
+
+  <script>
+    async function ask() {
+      const question = document.getElementById("question").value;
+
+      const res = await fetch("https://YOUR_API_ENDPOINT", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await res.json();
+      document.getElementById("response").innerText = data.answer;
+    }
+  </script>
+</body>
+</html>
