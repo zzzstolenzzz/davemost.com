@@ -1,30 +1,523 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>About Me AI</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="davemost.com — retro landing page; agent answers coming soon." />
+  <title>davemost.com</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --page-bg: #1e1c18;
+      --shell-a: #c4c8a8;
+      --shell-b: #9aa07e;
+      --shell-edge: #5c6148;
+      --bezel: #2a2f24;
+      --lcd-dark: #0f380f;
+      --lcd-pixel: #9bbc0f;
+      --lcd-glow: rgba(155, 188, 15, 0.35);
+      --pad: #2d3228;
+      --btn-a: #8b2942;
+      --btn-b: #4a6b8c;
+      --ink: #1a1f14;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 20px;
+      line-height: 1.35;
+      color: var(--ink);
+      background: var(--page-bg);
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(155, 188, 15, 0.06), transparent),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(255, 255, 255, 0.02) 2px,
+          rgba(255, 255, 255, 0.02) 4px
+        );
+    }
+
+    .page {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .ascii {
+      margin: 0 0 1.25rem;
+      padding: 0.75rem 0.5rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      font-size: clamp(4.5px, 2.35vw, 7.5px);
+      line-height: 1;
+      color: #c8d4a8;
+      text-shadow: 0 0 12px rgba(155, 188, 15, 0.25);
+      white-space: pre;
+      text-align: left;
+      font-family: ui-monospace, "Cascadia Mono", "Consolas", "Courier New", monospace;
+      letter-spacing: 0;
+    }
+
+    .lcd-pre,
+    .hint,
+    footer {
+      font-family: "VT323", ui-monospace, monospace;
+    }
+
+    .vh {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* —— Game Boy chassis —— */
+    .gameboy {
+      position: relative;
+      padding: 1.1rem 1rem 1.35rem;
+      border-radius: 6px 6px 28px 6px;
+      background: linear-gradient(165deg, var(--shell-a) 0%, var(--shell-b) 55%, #8a906f 100%);
+      border: 3px solid var(--shell-edge);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -18px 36px rgba(0, 0, 0, 0.12),
+        0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .gameboy::before {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 10px;
+      height: 5px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .gb-brand {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 0.35em;
+      color: #3d4334;
+      margin: 0 0 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .gb-brand span {
+      letter-spacing: 0.15em;
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    /* Screen stack */
+    .screen-stack {
+      background: var(--bezel);
+      border-radius: 4px;
+      padding: 10px 10px 12px;
+      margin-bottom: 1rem;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
+    }
+
+    .matrix-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 8px;
+      padding: 0 2px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: #8fa382;
+      text-transform: uppercase;
+    }
+
+    @media (min-width: 400px) {
+      .matrix-label {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+      }
+    }
+
+    .power {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: #7a856e;
+    }
+
+    .led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #306230;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    }
+
+    .led.on {
+      background: #62c962;
+      box-shadow:
+        0 0 8px rgba(98, 201, 98, 0.9),
+        0 0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    .lcd-wrap {
+      position: relative;
+      border-radius: 3px;
+      background: #1a2218;
+      padding: 8px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    .lcd {
+      position: relative;
+      min-height: 168px;
+      max-height: 280px;
+      overflow: auto;
+      padding: 10px 12px;
+      border-radius: 2px;
+      background: var(--lcd-dark);
+      color: var(--lcd-pixel);
+      text-shadow: 0 0 6px var(--lcd-glow);
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .lcd::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      border-radius: 2px;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0),
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.12) 2px,
+        rgba(0, 0, 0, 0.12) 3px
+      );
+      mix-blend-mode: multiply;
+      opacity: 0.45;
+    }
+
+    .lcd-pre {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Controls row */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .controls-deck {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .speaker {
+      display: grid;
+      grid-template-columns: repeat(5, 6px);
+      grid-template-rows: repeat(3, 6px);
+      gap: 5px;
+      opacity: 0.55;
+      margin: 0 auto 4px;
+      flex: 0 0 auto;
+    }
+
+    .speaker i {
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #3a4034;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .input-row label {
+      width: 100%;
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      color: #2f3428;
+    }
+
+    .input-row input {
+      flex: 1 1 160px;
+      min-width: 0;
+      font: inherit;
+      font-size: 22px;
+      padding: 0.45rem 0.6rem;
+      border-radius: 2px;
+      border: 2px solid #6f765c;
+      background: #dfe2c8;
+      color: var(--ink);
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .input-row input::placeholder {
+      color: #7a8068;
+    }
+
+    .input-row input:focus {
+      outline: 2px solid #4a7a4a;
+      outline-offset: 2px;
+    }
+
+    .btn-send {
+      font: inherit;
+      font-size: 18px;
+      letter-spacing: 0.12em;
+      padding: 0.45rem 0.85rem;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      color: #f2e9dc;
+      background: linear-gradient(180deg, #a53855 0%, var(--btn-a) 55%, #6f2235 100%);
+      box-shadow:
+        0 3px 0 #4a1a28,
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-send:active {
+      transform: translateY(2px);
+      box-shadow:
+        0 1px 0 #4a1a28,
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .face-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.65rem;
+      padding-bottom: 2px;
+    }
+
+    .b-btn,
+    .a-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: none;
+      box-shadow:
+        0 4px 0 #2a3030,
+        inset 0 2px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .b-btn {
+      background: linear-gradient(180deg, #5c7fa3 0%, var(--btn-b) 100%);
+      cursor: default;
+    }
+
+    .a-mark {
+      background: linear-gradient(180deg, #c94b6a 0%, var(--btn-a) 100%);
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 16px;
+      letter-spacing: 0.05em;
+    }
+
+    .dpad {
+      width: 88px;
+      height: 88px;
+      position: relative;
+      filter: drop-shadow(0 4px 0 #1f2319);
+    }
+
+    .dpad::before,
+    .dpad::after {
+      content: "";
+      position: absolute;
+      background: var(--pad);
+      border-radius: 3px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .dpad::before {
+      left: 50%;
+      top: 8px;
+      bottom: 8px;
+      width: 28px;
+      transform: translateX(-50%);
+    }
+
+    .dpad::after {
+      top: 50%;
+      left: 8px;
+      right: 8px;
+      height: 28px;
+      transform: translateY(-50%);
+    }
+
+    .hint {
+      margin: 0.15rem 0 0;
+      font-size: 16px;
+      color: #4a5240;
+      letter-spacing: 0.03em;
+    }
+
+    footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 16px;
+      color: #6a7560;
+    }
+  </style>
 </head>
 <body>
-  <h1>Ask About Me</h1>
-  <input id="question" placeholder="Ask something..." />
-  <button onclick="ask()">Ask</button>
+  <div class="page">
+    <h1 class="vh">davemost.com</h1>
+    <pre class="ascii" aria-hidden="true">                                                                                                         .                                                           
+   &#x27;:::::&#x27;                                                                                            .1$&#x27;                                                          
+ ./+OxxxZ-(                                                                                         .-[Z@&#x27;                                                          
+}-f~. i .+)-]      &#x27;}         &gt;_   .n`       .t&#x27;           `z.   &gt;~          .O.          &#x27;n.      I}_-k@&#x27;                .c`         .(:           ./^   ^t.       
+ J@d  Bo.  (@1  ..J`}-l     ,Z~&lt;j&quot;1+X^x.    (+t^t.       .C^w;)&quot;Oi&lt;v:      .j;W`z.      .Q,z&#x27;}.    w/^.k@`  ..           t+C^x.     .l)t&quot;b`       .~&lt;t^b&#x27;r&quot;t[).     
+ `+{  B@h[.]@1 .fi/,.1!fi ^r;J``Y/}(.l|l1&#x27;_1+1.l)~}.   .1&quot;ti.1[JC&#x27;`J&quot;j,  .__[}.~|![.  .{!t[.![+_.  w/^.0[[p@n.         -[-).&gt;|i{.  lfln.:z:f&#x27;    &gt;|&lt;).InXtI.(_|~    
+ `+{  BW`+ ]@1~z/&lt;+M&lt; .()p^Y@k&#x27;&#x27;d@@| lB$}Y(/`Bf. _{t[.}/}&gt;Qd&quot; .,@v. ^jcx.Z({`$) ._[Z^`Y{[d@k^.-|w_ w/^ ^m@Q`         .0||.Bj. _}j}Zt/`#C&#x27; l|v- :d+)!$[. ^zk,../tO   
+ `+{  BW`+ ]@1+ [ +@@p  h#^.j|``@@+r _@0 }[ &#x27;$@M}d@Q^.X;] Q@@w `@@$/ }@C&#x27;nJ.`@@Wl p@:&quot;iz dax@h@@f  w/^.k@,            t|. $@$tk@Q^wt;.#@${ 1@( &gt;I( l@@M&quot; z@@0.&#x27;ok   
+ `+{  BW`+ ]@1+ [ +@x-  h#^.j|``@@+r _@0 }[ &#x27;MCk@d.   X;- Q@0n `@@!m }@C&#x27;nJ.`@@:&lt; p@:&quot;iz..    -@/  w/^.k@&#x27;            t|. $Bc@h&#x27;  wt;.#@ij 1@( &gt;I( l@oil z@rt &#x27;ok   
+ `+{  BB&quot;+ ]@1+ [ +@Q)  h#^.j|``@*+r _@0 }[ &#x27;J@o|+0&quot;. X;- Q@0n `@@!m }@C&#x27;nJ.`@@+&lt; p@:,Ba#hoW1,-@/  w/^.k@&#x27;    .!OO:.  t|. $@it;z&quot; wt;.#@1j 1@( &gt;I( l@oil z@rt &#x27;ok   
+ ^|)  Bnr: ]@1+&#x27;{ InJ:  Ox{&#x27;nz&quot; `jnr j@Q }) .X0x:Im0v.0{] QWbJ `@$jm }$w`v0.&#x27;Cm&gt;.&#x27;h@iMvz..td|.]@/ `mz^.bWl  .,jifrlf&#x27; fj&#x27;.va~ ,0Ccwx;.zm(. x@(.-/t l$*tl z$ZY &#x27;ob&quot;  
+vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^Bm. .)m#r@$-  .r@WI .x@Ml  .C@a&quot;]oZ-. &#x27;wpJ.xda; ._dh~}@@{. .j@$i !M@c.  -B$[.Owk^ .t@v. &#x27;b@&gt;  !dk(.
+.&gt;@@~...&gt;$@-.  .&#x27;Z@a0@@@C$@x..!@@/B@/.    .{@B{@@i   ./@B{@$o@md@h@@)$@}...n@B1@@&quot;.   .&#x27;Q@#v@$&quot;.  .m@h0@*^   `o@w*@Q.  .(@$(@@i    ._@@z$@(.  .!@@J$@o@BC@$M@da@m&#x27;  
+  ./#####t.       ,oM; +BZ&#x27;     _@X.        .v@[       .z@[. `#o.  ~@z.     .C@]         .dB;       .kB!       !W#^      .z@[        .|$Y.       }$m. .Z${ .:##;    
+                   .             .            .         .           .                     .                                           .                      ..
+                                                                                                                                                                    
+                                                                                                                                                                    
+</pre>
 
-  <p id="response"></p>
+    <div class="gameboy" role="region" aria-label="Agent console styled like a handheld">
+      <p class="gb-brand">Dave Boy <span>· dmg-01-ish</span></p>
+
+      <div class="screen-stack">
+        <div class="matrix-label">
+          <span>Dot matrix with stereo sound</span>
+          <div class="power" title="Power indicator">
+            <span class="led on" id="pwr" aria-hidden="true"></span>
+            <span>battery</span>
+          </div>
+        </div>
+
+        <div class="lcd-wrap">
+          <div class="lcd" aria-live="polite">
+            <pre class="lcd-pre" id="lcd">davemost.com
+────────────
+&gt; agent ready (offline)
+&gt; answers will appear here.</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="controls-deck">
+          <div class="dpad" aria-hidden="true"></div>
+          <div class="speaker" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="face-buttons" aria-hidden="true">
+            <div class="b-btn" title="B"></div>
+            <div class="a-mark">A</div>
+          </div>
+        </div>
+
+        <div class="input-row">
+          <label for="question">Ask the agent</label>
+          <input
+            type="text"
+            id="question"
+            name="q"
+            autocomplete="off"
+            placeholder="type a question..."
+            maxlength="500"
+          />
+          <button class="btn-send" type="button" id="send">Send</button>
+        </div>
+
+        <p class="hint" id="status">
+          Hook your AWS agent API to the Send button when you are ready — for now this only updates the screen locally.
+        </p>
+      </div>
+    </div>
+
+    <footer>© <span id="y"></span> davemost.com</footer>
+  </div>
 
   <script>
-    async function ask() {
-      const question = document.getElementById("question").value;
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
 
-      const res = await fetch("https://YOUR_API_ENDPOINT", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ question })
+      var q = document.getElementById("question");
+      var lcd = document.getElementById("lcd");
+      var send = document.getElementById("send");
+      var pwr = document.getElementById("pwr");
+
+      function setLcd(text) {
+        lcd.textContent = text;
+      }
+
+      function demoReply(question) {
+        return (
+          "davemost.com\n────────────\n> " +
+          question +
+          "\n\n[AGENT OFFLINE]\nNo API yet — wire your\nAWS endpoint to fetch a\nreal answer here."
+        );
+      }
+
+      function go() {
+        var text = (q.value || "").trim();
+        if (!text) {
+          setLcd(
+            "davemost.com\n────────────\n> type something first.\n\n(hint: ask a question, then Send)"
+          );
+          q.focus();
+          return;
+        }
+        if (pwr) pwr.classList.add("on");
+        setLcd(demoReply(text));
+      }
+
+      send.addEventListener("click", go);
+      q.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") go();
       });
-
-      const data = await res.json();
-      document.getElementById("response").innerText = data.answer;
-    }
+    })();
   </script>
 </body>
 </html>
