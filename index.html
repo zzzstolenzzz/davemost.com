@@ -540,9 +540,37 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var send = document.getElementById("send");
       var status = document.getElementById("status");
 
+      var typeTimer = null;
+
       function setLcd(text) {
         lcd.textContent = text;
         lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+      }
+
+      function cancelTypewriter() {
+        if (typeTimer !== null) {
+          clearTimeout(typeTimer);
+          typeTimer = null;
+        }
+      }
+
+      function typewrite(prefix, reply, done) {
+        cancelTypewriter();
+        var i = 0;
+        lcd.textContent = prefix;
+
+        function tick() {
+          if (i >= reply.length) {
+            typeTimer = null;
+            if (done) done();
+            return;
+          }
+          lcd.textContent = prefix + reply.slice(0, ++i);
+          lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+          typeTimer = setTimeout(tick, 18);
+        }
+
+        tick();
       }
 
       function setStatus(text) {
@@ -558,11 +586,13 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       function go() {
         var text = (q.value || "").trim();
         if (!text) {
+          cancelTypewriter();
           setLcd("davemost.com\n────────────\n> type something first.");
           q.focus();
           return;
         }
 
+        cancelTypewriter();
         setLcd("davemost.com\n────────────\n> " + text + "\n\n...");
         setLoading(true);
 
@@ -577,15 +607,16 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           })
           .then(function (data) {
             var reply = (data && (data.reply || data.message || data.response || data.answer)) || JSON.stringify(data);
-            setLcd("davemost.com\n────────────\n> " + text + "\n\n" + reply);
-          })
-          .catch(function () {
-            setLcd("davemost.com\n────────────\n> " + text + "\n\n[ERROR]\nCould not reach agent.\nTry again.");
-          })
-          .finally(function () {
+            var prefix = "davemost.com\n────────────\n> " + text + "\n\n";
             setLoading(false);
             q.value = "";
-            q.focus();
+            typewrite(prefix, reply, function () { q.focus(); });
+          })
+          .catch(function () {
+            var prefix = "davemost.com\n────────────\n> " + text + "\n\n";
+            setLoading(false);
+            q.value = "";
+            typewrite(prefix, "[ERROR]\nCould not reach agent.\nTry again.", function () { q.focus(); });
           });
       }
 
