@@ -49,8 +49,54 @@ Rules you must follow without exception:
 
 Known facts about Dave Most:
 - He runs davemost.com
-- He is a software developer and entrepreneur
-- His resume is available for download at: https://davemost.com/dave-most-resume.docx — share this link if anyone asks for his resume or CV`;
+- His resume is available for download at: https://davemost.com/dave-most-resume.docx — share this link if anyone asks for his resume or CV
+
+Dave's full resume:
+---
+Dave Most | linkedin.com/in/davemost
+
+PROGRAM & PROJECT MANAGEMENT | DATA & ANALYTICS | TECHNOLOGY TRANSFORMATION
+
+Professional Summary:
+Program and project management leader with extensive experience driving technology, data, and operational initiatives across healthcare and enterprise environments. Proven ability to lead cross-functional teams, manage complex programs, and deliver data-driven solutions that improve performance, efficiency, and customer outcomes. Strong background in digital transformation, analytics, and emerging AI applications, with experience translating business requirements into scalable technical solutions. Currently holds an active Top Secret/SCI clearance.
+
+Core Competencies:
+Program & Project Management, Digital Transformation, Data & Analytics Strategy, Stakeholder Engagement, Cross-Functional Team Leadership, Reporting & Data Visualization, Vendor & Partner Coordination, Customer Experience Strategy, Business Process Improvement, AI & Automation, Risk Management, Change Management
+
+Professional Experience:
+
+Program Manager, Business Solutions | UnitedHealthcare | Jan 2022 – Apr 2026
+Led data and technology initiatives supporting marketing and customer engagement strategies, focusing on data integration, reporting, and process optimization. Directed end-to-end implementation of data ingestion and reporting solutions. Led cross-functional program efforts to replace and modernize marketing campaign data systems. Developed and deployed solutions using Azure, Tableau, and Microsoft Power Platform.
+
+Director, Experience & Adoption | Optum | Jun 2019 – Jan 2022
+Directed customer experience and analytics initiatives, focusing on data-driven insights, survey deployment, and process improvement. Defined and executed customer experience strategy including NPS tracking, KPI reporting, and performance improvement. Designed and implemented Qualtrics-based reporting and analytics dashboards.
+
+Program Director, National Accounts | UnitedHealthcare | Aug 2015 – Jun 2019
+Managed large-scale programs supporting national accounts, focusing on client engagement, network development, and strategic growth. Executed network development and expansion initiatives for specialty care programs including orthopedic and cardiac centers of excellence (COEs).
+
+Military Experience:
+Intelligence Specialist | United States Navy Reserve | Jul 2020 – Present
+Supported intelligence operations with a focus on data analysis, automation, and reporting. Holds active Top Secret/SCI clearance. Developed and deployed AI-powered tools using AWS to automate analysis of classified intelligence data. Built Python and VBA-based solutions to streamline workflows.
+
+Community Leadership:
+Volunteer Firefighter | Lower Merion Fire Department
+
+Education:
+Bachelor of Arts, Computer & Information Sciences | Temple University, Philadelphia, PA
+Associate of Science, Computer & Information Sciences | Montgomery County Community College
+
+Certifications:
+Project Management Professional (PMP) – Examination in Progress
+Qualtrics Customer Experience Expert Certification
+Top Secret/SCI Security Clearance
+
+Technical Skills:
+AI & Cloud Platforms: AWS, Azure, Claude, ChatGPT, Copilot, Grok, Gemini
+Programming Languages: Python, PHP, JavaScript, VBA
+Data Visualization & Reporting: Tableau, Microsoft Power BI, Excel
+Platforms & Technologies: Microsoft Power Platform, Qualtrics
+Project & Workflow Management: Agile, Waterfall, JIRA, Microsoft Project
+---`;
 
   if (corrections.length > 0) {
     const lines = corrections.map((c) => {
