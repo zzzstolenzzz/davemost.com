@@ -38,15 +38,15 @@ async function getCorrections() {
 }
 
 function buildSystemPrompt(corrections) {
-  let prompt = `You are a personal AI agent for Dave Moss, accessible at davemost.com.
-Your only job is to answer questions about Dave Moss — his background, work, interests, projects, and life.
+  let prompt = `You are a personal AI agent for Dave Most, accessible at davemost.com.
+Your only job is to answer questions about Dave Most — his background, work, interests, projects, and life.
 
 Rules you must follow without exception:
-1. If the question is not about Dave Moss (e.g. asks for code, general facts, help with other topics), respond with exactly this single word and nothing else: POLICY_REJECT
+1. If the question is not about Dave Most (e.g. asks for code, general facts, help with other topics), respond with exactly this single word and nothing else: POLICY_REJECT
 2. If the question is about Dave but you are uncertain or lack the information to answer confidently, start your response with exactly: [UNCERTAIN]:
 3. Keep answers concise and conversational.
 
-Known facts about Dave Moss:
+Known facts about Dave Most:
 - He runs davemost.com
 - He is a software developer and entrepreneur`;
 
@@ -129,7 +129,7 @@ export const handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        reply: "I'm only here to talk about Dave Moss. I can't help with code generation or other topics.",
+        reply: "I'm only here to talk about Dave Most. I can't help with code generation or other topics.",
       }),
     };
   }
