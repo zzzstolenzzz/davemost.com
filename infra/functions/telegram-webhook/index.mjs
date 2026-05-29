@@ -33,12 +33,15 @@ async function reply(chatId, replyToMessageId, text) {
   }
 }
 
+async function scanAll() {
+  const { Items = [] } = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME, ConsistentRead: true }));
+  return Items;
+}
+
 async function forgetFact(keyword) {
-  const { Items = [] } = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME }));
+  const items = await scanAll();
   const lower = keyword.toLowerCase();
-  const matches = Items.filter((item) =>
-    item.correction?.S?.toLowerCase().includes(lower)
-  );
+  const matches = items.filter((item) => item.correction?.S?.toLowerCase().includes(lower));
   await Promise.all(
     matches.map((item) =>
       dynamo.send(new DeleteItemCommand({ TableName: TABLE_NAME, Key: { id: item.id } }))
@@ -70,6 +73,19 @@ export const handler = async (event) => {
   const chatId = message.chat.id;
   const msgId = message.message_id;
   const text = message.text.trim();
+
+  // LIST command: show all stored facts
+  if (text.toUpperCase() === "LIST") {
+    const items = await scanAll();
+    if (items.length === 0) {
+      await reply(chatId, msgId, "No facts stored yet.");
+    } else {
+      const sorted = items.sort((a, b) => (a.timestamp?.S ?? "").localeCompare(b.timestamp?.S ?? ""));
+      const lines = sorted.map((item, i) => `${i + 1}. ${item.correction?.S}`);
+      await reply(chatId, msgId, `📋 Stored facts (${items.length}):\n\n${lines.join("\n")}`);
+    }
+    return { statusCode: 200, body: "ok" };
+  }
 
   // FORGET command: delete facts containing the keyword
   if (text.toUpperCase().startsWith("FORGET:")) {

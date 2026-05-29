@@ -33,7 +33,7 @@ function demarshall(item) {
 }
 
 async function getCorrections() {
-  const { Items = [] } = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME }));
+  const { Items = [] } = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME, ConsistentRead: true }));
   return Items.map(demarshall).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 }
 
