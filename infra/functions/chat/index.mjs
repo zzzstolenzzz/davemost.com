@@ -49,7 +49,8 @@ Rules you must follow without exception:
 
 Known facts about Dave Most:
 - He runs davemost.com
-- He is a software developer and entrepreneur`;
+- He is a software developer and entrepreneur
+- His resume is available for download at: https://davemost.com/dave-most-resume.docx — share this link if anyone asks for his resume or CV`;
 
   if (corrections.length > 0) {
     const lines = corrections.map((c) => {

@@ -542,6 +542,17 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       var typeTimer = null;
 
+      function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      }
+
+      function renderWithLinks(text) {
+        return escapeHtml(text).replace(
+          /(https?:\/\/[^\s]+)/g,
+          '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">$1</a>'
+        );
+      }
+
       function setLcd(text) {
         lcd.textContent = text;
         lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
@@ -562,6 +573,8 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         function tick() {
           if (i >= reply.length) {
             typeTimer = null;
+            lcd.innerHTML = renderWithLinks(prefix + reply);
+            lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
             if (done) done();
             return;
           }
