@@ -1,0 +1,10 @@
+aws_region            = "us-east-1"
+telegram_user_id      = "YOUR_NUMERIC_TELEGRAM_USER_ID"
+
+# Secret names in Secrets Manager (defaults shown — only override if you want different names)
+# bot_token_secret_name  = "davemost/telegram-bot-token"
+# gemini_key_secret_name = "davemost/gemini-api-key"
+
+# Optional: name of an existing external chat Lambda's IAM role.
+# Unused if you deployed the chat Lambda via this Terraform.
+# agent_lambda_role_name = "your-existing-chat-lambda-role-name"
