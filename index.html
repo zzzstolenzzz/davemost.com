@@ -547,10 +547,11 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       }
 
       function renderWithLinks(text) {
-        return escapeHtml(text).replace(
-          /(https?:\/\/[^\s]+)/g,
-          '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">$1</a>'
-        );
+        return escapeHtml(text).replace(/(https?:\/\/[^\s]+)/g, function (url) {
+          var isDoc = /\.(docx?|pdf|xlsx?|pptx?)$/i.test(url);
+          var extra = isDoc ? ' download' : '';
+          return '<a href="' + url + '" target="_blank" rel="noopener"' + extra + ' style="color:inherit;text-decoration:underline;">' + url + '</a>';
+        });
       }
 
       function setLcd(text) {

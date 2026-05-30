@@ -153,6 +153,14 @@ async function callGemini(systemPrompt, userMessage) {
       }),
     }
   );
+  if (res.status === 429) {
+    const data = await res.json().catch(() => ({}));
+    const retryInfo = data.error?.details?.find((d) => d.retryDelay);
+    const seconds = retryInfo ? parseInt(retryInfo.retryDelay) : 30;
+    const err = new Error(`RATE_LIMIT:${seconds}`);
+    err.isRateLimit = true;
+    throw err;
+  }
   if (!res.ok) {
     const body = await res.text();
     console.error(`Gemini error ${res.status}:`, body);
@@ -185,6 +193,13 @@ export const handler = async (event) => {
   try {
     raw = await callGemini(systemPrompt, message);
   } catch (err) {
+    if (err.isRateLimit) {
+      const seconds = err.message.split(":")[1] ?? "30";
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ reply: `Too many requests — wait about ${seconds} seconds and try again.` }),
+      };
+    }
     await sendTelegram(`🔴 AGENT ERROR\nQ: ${message}\n${err.message?.slice(0, 300) ?? "Unknown error"}`);
     return {
       statusCode: 502,
