@@ -137,9 +137,15 @@ async function callGemini(systemPrompt, userMessage) {
       }),
     }
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`Gemini error ${res.status}:`, body);
+    throw new Error(`Gemini ${res.status}: ${body}`);
+  }
   const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) console.error("Gemini empty response:", JSON.stringify(data));
+  return text ?? "";
 }
 
 export const handler = async (event) => {
@@ -162,7 +168,8 @@ export const handler = async (event) => {
   let raw;
   try {
     raw = await callGemini(systemPrompt, message);
-  } catch {
+  } catch (err) {
+    await sendTelegram(`🔴 AGENT ERROR\nQ: ${message}\n${err.message?.slice(0, 300) ?? "Unknown error"}`);
     return {
       statusCode: 502,
       body: JSON.stringify({ reply: "Agent unavailable. Try again shortly." }),
