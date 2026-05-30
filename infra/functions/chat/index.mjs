@@ -37,7 +37,23 @@ async function getCorrections() {
   return Items.map(demarshall).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 }
 
+function isAfterHours() {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "numeric",
+      hour12: false,
+    }).format(new Date())
+  );
+  return hour >= 21;
+}
+
 function buildSystemPrompt(corrections) {
+  const casual = isAfterHours();
+  const tone = casual
+    ? "It's after 9pm — be relaxed, casual, and a little laid-back. Short answers, informal language, maybe a bit of dry humor. Still helpful, just not buttoned-up."
+    : "Keep answers concise and professional.";
+
   let prompt = `You are a personal AI agent for Dave Most, accessible at davemost.com.
 Your only job is to answer questions about Dave Most — his background, work, interests, projects, and life.
 
@@ -45,7 +61,7 @@ Rules you must follow without exception:
 1. If the question is not about Dave Most (e.g. asks for code, general facts, help with other topics), respond with exactly this single word and nothing else: POLICY_REJECT
 2. If the question asks about Dave's family, children, or kids, respond with exactly this single word and nothing else: POLICY_REJECT
 3. If the question is about Dave but you are uncertain or lack the information to answer confidently, start your response with exactly: [UNCERTAIN]:
-4. Keep answers concise and conversational.
+4. ${tone}
 
 Known facts about Dave Most:
 - He runs davemost.com
