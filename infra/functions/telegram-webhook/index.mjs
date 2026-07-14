@@ -9,6 +9,7 @@ const TABLE_NAME = process.env.TABLE_NAME;
 const AUTHORIZED_USER_ID = Number(process.env.TELEGRAM_USER_ID);
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const TELEGRAM_SECRET_ARN = process.env.TELEGRAM_SECRET_ARN;
+const CHAT_API_URL = process.env.CHAT_API_URL;
 
 let telegramToken = null;
 
@@ -48,6 +49,19 @@ async function forgetFact(keyword) {
     )
   );
   return matches.length;
+}
+
+async function storeFact(chatId, msgId, correction, context) {
+  const item = {
+    id:         { S: randomUUID() },
+    timestamp:  { S: new Date().toISOString() },
+    correction: { S: correction },
+    chatId:     { S: String(chatId) },
+    messageId:  { N: String(msgId) },
+  };
+  if (context) item.botMessage = { S: context };
+  await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: item }));
+  await reply(chatId, msgId, "✅ Got it — I'll remember that.");
 }
 
 export const handler = async (event) => {
@@ -105,23 +119,45 @@ export const handler = async (event) => {
     return { statusCode: 200, body: "ok" };
   }
 
-  // Otherwise store as a new correction/fact
-  const botMessage = message.reply_to_message?.text ?? null;
-
-  const item = {
-    id:        { S: randomUUID() },
-    timestamp: { S: new Date().toISOString() },
-    correction: { S: text },
-    chatId:    { S: String(chatId) },
-    messageId: { N: String(msgId) },
-  };
-
-  if (botMessage) {
-    item.botMessage = { S: botMessage };
+  // TEACH command: explicitly store a fact
+  if (text.toUpperCase().startsWith("TEACH:")) {
+    const fact = text.slice("TEACH:".length).trim();
+    if (!fact) {
+      await reply(chatId, msgId, "Usage: TEACH: <fact to remember>");
+      return { statusCode: 200, body: "ok" };
+    }
+    await storeFact(chatId, msgId, fact);
+    return { statusCode: 200, body: "ok" };
   }
 
-  await dynamo.send(new PutItemCommand({ TableName: TABLE_NAME, Item: item }));
-  await reply(chatId, msgId, "✅ Got it — I'll remember that.");
+  const botMessage = message.reply_to_message?.text ?? null;
+
+  // Replying to an uncertain alert (from the website widget or asked directly in
+  // Telegram) teaches the fact directly — no TEACH: needed.
+  const isUncertainReply =
+    botMessage?.startsWith("⚠️ UNCERTAIN") ||
+    botMessage?.includes("⚠️ Not sure — reply to this message to correct me.");
+  if (isUncertainReply) {
+    const questionMatch = botMessage.match(/Q: ([\s\S]*?)\nA: /);
+    await storeFact(chatId, msgId, text, questionMatch ? questionMatch[1].trim() : undefined);
+    return { statusCode: 200, body: "ok" };
+  }
+
+  // Default: ask the agent and reply, passing prior bot message as history if this is a reply
+  const history = botMessage ? [{ role: "assistant", text: botMessage }] : undefined;
+  try {
+    const res = await fetch(CHAT_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, _silent: true, history }),
+    });
+    const data = await res.json();
+    const answer = data.reply ?? "No response.";
+    const suffix = data._uncertain ? "\n\n⚠️ Not sure — reply to this message to correct me." : "";
+    await reply(chatId, msgId, answer + suffix);
+  } catch (err) {
+    await reply(chatId, msgId, `Error: ${err.message}`);
+  }
 
   return { statusCode: 200, body: "ok" };
 };

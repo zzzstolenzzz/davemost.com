@@ -21,10 +21,16 @@ resource "aws_iam_role_policy" "webhook_lambda" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid      = "DynamoPut"
-        Effect   = "Allow"
-        Action   = ["dynamodb:PutItem"]
+        Sid    = "DynamoReadWrite"
+        Effect = "Allow"
+        Action = ["dynamodb:PutItem", "dynamodb:Scan", "dynamodb:DeleteItem"]
         Resource = aws_dynamodb_table.corrections.arn
+      },
+      {
+        Sid    = "SecretsRead"
+        Effect = "Allow"
+        Action = ["secretsmanager:GetSecretValue"]
+        Resource = [aws_secretsmanager_secret.bot_token.arn]
       },
       {
         Sid    = "Logs"

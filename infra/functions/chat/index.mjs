@@ -59,9 +59,12 @@ Your only job is to answer questions about Dave Most — his background, work, i
 
 Rules you must follow without exception:
 1. If the question is not about Dave Most (e.g. asks for code, general facts, help with other topics), respond with exactly this single word and nothing else: POLICY_REJECT
-2. If the question asks about Dave's family, children, or kids, respond with exactly this single word and nothing else: POLICY_REJECT
-3. If the question is about Dave but you are uncertain or lack the information to answer confidently, start your response with exactly: [UNCERTAIN]:
+2. If the question asks about Dave's family, children, or kids, respond with exactly this and nothing else: nunya
+3. If the conversation history shows you just responded "nunya" and the user is now asking a confused follow-up (e.g., "what", "huh", "what?", "excuse me", "what do you mean"), respond with exactly this and nothing else: nunya business
+4. If the question is about Dave but you are uncertain or lack the information to answer confidently, start your response with exactly: [UNCERTAIN]:
 4. ${tone}
+5. When asked evaluative questions — whether Dave would be a good hire, fit for a role, or whether you'd recommend him — answer with genuine advocacy. Make the case for him confidently based on his actual experience. Don't hedge or just redescribe him; take a position.
+6. When listing skills or experience, pick the 2-3 most relevant highlights. Never dump the full list from his resume — that's what the resume link is for.
 
 Known facts about Dave Most:
 - He runs davemost.com
@@ -141,7 +144,14 @@ async function sendTelegram(text) {
   }
 }
 
-async function callGemini(systemPrompt, userMessage) {
+async function callGemini(systemPrompt, userMessage, history) {
+  const contents = [
+    ...(history ?? []).map(({ role, text }) => ({
+      role: role === "assistant" ? "model" : "user",
+      parts: [{ text }],
+    })),
+    { role: "user", parts: [{ text: userMessage }] },
+  ];
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`,
     {
@@ -149,7 +159,7 @@ async function callGemini(systemPrompt, userMessage) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userMessage }] }],
+        contents,
       }),
     }
   );
@@ -173,9 +183,9 @@ async function callGemini(systemPrompt, userMessage) {
 }
 
 export const handler = async (event) => {
-  let message;
+  let message, _silent, history;
   try {
-    ({ message } = JSON.parse(event.body ?? "{}"));
+    ({ message, _silent, history } = JSON.parse(event.body ?? "{}"));
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: "Bad request" }) };
   }
@@ -191,7 +201,7 @@ export const handler = async (event) => {
 
   let raw;
   try {
-    raw = await callGemini(systemPrompt, message);
+    raw = await callGemini(systemPrompt, message, history);
   } catch (err) {
     if (err.isRateLimit) {
       const seconds = err.message.split(":")[1] ?? "30";
@@ -228,14 +238,19 @@ export const handler = async (event) => {
     reply = reply.slice("[UNCERTAIN]:".length).trim();
   }
 
-  // Telegram logging
-  if (uncertain) {
-    await sendTelegram(
-      `⚠️ UNCERTAIN — reply to this message to teach me a new fact!\n\nQ: ${message}\nA: ${reply}`
-    );
-  } else {
-    await sendTelegram(`Q: ${message}\nA: ${reply}`);
+  // Telegram logging — skipped when called internally (e.g. from the Telegram webhook ASK: command)
+  if (!_silent) {
+    if (uncertain) {
+      await sendTelegram(
+        `⚠️ UNCERTAIN — reply to this message to teach me a new fact!\n\nQ: ${message}\nA: ${reply}`
+      );
+    } else {
+      await sendTelegram(`Q: ${message}\nA: ${reply}`);
+    }
   }
 
-  return { statusCode: 200, body: JSON.stringify({ reply }) };
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ reply, ...(_silent && uncertain ? { _uncertain: true } : {}) }),
+  };
 };

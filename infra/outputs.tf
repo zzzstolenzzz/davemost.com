@@ -1,6 +1,6 @@
 output "webhook_url" {
   description = "HTTPS URL to register with Telegram setWebhook"
-  value       = "${aws_apigatewayv2_stage.webhook.invoke_url}/webhook"
+  value       = "${trimsuffix(aws_apigatewayv2_stage.webhook.invoke_url, "/")}/webhook"
 }
 
 output "webhook_secret" {
@@ -31,5 +31,5 @@ output "gemini_key_secret_arn" {
 
 output "chat_api_url" {
   description = "Paste this URL into index.html as the API constant, then push to GitHub Pages"
-  value       = "${aws_apigatewayv2_stage.chat.invoke_url}/chat"
+  value       = "${trimsuffix(aws_apigatewayv2_stage.chat.invoke_url, "/")}/chat"
 }

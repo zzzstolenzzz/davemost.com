@@ -15,9 +15,11 @@ resource "aws_lambda_function" "webhook" {
 
   environment {
     variables = {
-      TABLE_NAME       = aws_dynamodb_table.corrections.name
-      TELEGRAM_USER_ID = var.telegram_user_id
-      WEBHOOK_SECRET   = random_password.webhook_secret.result
+      TABLE_NAME          = aws_dynamodb_table.corrections.name
+      TELEGRAM_USER_ID    = var.telegram_user_id
+      WEBHOOK_SECRET      = random_password.webhook_secret.result
+      TELEGRAM_SECRET_ARN = aws_secretsmanager_secret.bot_token.arn
+      CHAT_API_URL        = "${trimsuffix(aws_apigatewayv2_stage.chat.invoke_url, "/")}/chat"
     }
   }
 }
