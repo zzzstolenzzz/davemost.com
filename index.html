@@ -1114,6 +1114,10 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         if (e.key === "Escape") closeAllMenus();
       });
 
+      document.addEventListener("click", function () {
+        if (currentTheme() === "tron" && !q.disabled) q.focus({ preventScroll: true });
+      });
+
       document.querySelectorAll(".menu-dropdown button[data-action]").forEach(function (btn) {
         btn.addEventListener("click", function () {
           var action = btn.getAttribute("data-action");
