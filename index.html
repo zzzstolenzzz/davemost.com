@@ -338,25 +338,6 @@
       word-break: break-word;
     }
 
-    .wait-cursor {
-      display: none;
-    }
-
-    html[data-theme="tron"] .wait-cursor {
-      display: inline-block;
-      width: 0.55em;
-      height: 1.1em;
-      margin-top: 4px;
-      visibility: hidden;
-    }
-
-    html[data-theme="tron"] .wait-cursor.active {
-      visibility: visible;
-      background: #7cf9ff;
-      box-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
-      animation: cursor-blink 1s steps(1) infinite;
-    }
-
     @keyframes cursor-blink {
       0%, 49% {
         opacity: 1;
@@ -378,6 +359,10 @@
       box-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
       animation: cursor-blink 1s steps(1) infinite;
       flex: 0 0 auto;
+    }
+
+    html[data-theme="tron"] .input-row.responding .input-cursor {
+      visibility: hidden;
     }
 
     /* Controls row */
@@ -834,7 +819,6 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 ────────────
 &gt; agent ready
 &gt; ask me anything.</pre>
-            <span id="wait-cursor" class="wait-cursor" aria-hidden="true"></span>
           </div>
         </div>
       </div>
@@ -922,7 +906,6 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var lcd = document.getElementById("lcd");
       var send = document.getElementById("send");
       var status = document.getElementById("status");
-      var waitCursor = document.getElementById("wait-cursor");
       var mirrorText = document.getElementById("input-mirror-text");
       var GREETING = lcd.textContent;
       var TRON_START = "";
@@ -1007,7 +990,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           : "davemost.com\n────────────\n> " + text + "\n\n";
         setLcd(tron ? prefix : prefix + "...");
         if (tron) {
-          waitCursor.classList.add("active");
+          inputRow.classList.add("responding");
           q.value = "";
           syncMirror();
         }
@@ -1034,20 +1017,24 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             var reply = (data && (data.reply || data.message || data.response || data.answer)) || JSON.stringify(data);
             lastExchange = { userText: text, replyText: reply };
             if (tron) transcript = prefix + reply;
-            waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
             syncMirror();
-            typewrite(prefix, reply, function () { q.focus(); });
+            typewrite(prefix, reply, function () {
+              inputRow.classList.remove("responding");
+              q.focus();
+            });
           })
           .catch(function () {
             var errText = "[ERROR]\nCould not reach agent.\nTry again.";
             if (tron) transcript = prefix + errText;
-            waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
             syncMirror();
-            typewrite(prefix, errText, function () { q.focus(); });
+            typewrite(prefix, errText, function () {
+              inputRow.classList.remove("responding");
+              q.focus();
+            });
           });
       }
 
@@ -1134,7 +1121,6 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
           if (action === "new-session") {
             cancelTypewriter();
-            waitCursor.classList.remove("active");
             lastExchange = null;
             transcript = currentTheme() === "tron" ? TRON_START : GREETING;
             setLcd(transcript);
@@ -1157,7 +1143,6 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             applyTheme("gameboy");
           } else if (action === "about") {
             cancelTypewriter();
-            waitCursor.classList.remove("active");
             setLcd(
               "davemost.com\n────────────\n" +
               "> HELP\n" +
