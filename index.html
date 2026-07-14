@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="davemost.com — retro landing page; agent answers coming soon." />
   <title>davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --page-bg: #1e1c18;
@@ -22,6 +29,21 @@
       --btn-a: #8b2942;
       --btn-b: #4a6b8c;
       --ink: #1a1f14;
+    }
+
+    html[data-theme="tron"] {
+      --page-bg: #000810;
+      --shell-a: #071018;
+      --shell-b: #020608;
+      --shell-edge: #0fd8ec;
+      --bezel: #00090e;
+      --lcd-dark: #00090c;
+      --lcd-pixel: #7cf9ff;
+      --lcd-glow: rgba(0, 229, 255, 0.45);
+      --pad: #041018;
+      --btn-a: #00c8e0;
+      --btn-b: #ff8c1a;
+      --ink: #cdefff;
     }
 
     * {
@@ -48,6 +70,11 @@
         );
     }
 
+    html[data-theme="tron"] body {
+      background-image: none;
+      background-color: #000;
+    }
+
     .ascii-stage {
       width: 100%;
       max-width: 100vw;
@@ -65,6 +92,15 @@
       padding: 0 1rem 2.5rem;
     }
 
+    html[data-theme="tron"] .page {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+      min-height: calc(100vh - 30px);
+      display: flex;
+      flex-direction: column;
+    }
+
     .ascii {
       margin: 0;
       padding: 0;
@@ -79,6 +115,11 @@
       letter-spacing: 0;
       width: max-content;
       max-width: none;
+    }
+
+    html[data-theme="tron"] .ascii {
+      color: #8ff5ff;
+      text-shadow: 0 0 14px rgba(0, 229, 255, 0.55), 0 0 28px rgba(0, 229, 255, 0.22);
     }
 
     .lcd-pre,
@@ -125,6 +166,21 @@
       pointer-events: none;
     }
 
+    html[data-theme="tron"] .gameboy {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1.25rem 1.5rem;
+      border-radius: 0;
+      border: none;
+      background: none;
+      box-shadow: none;
+    }
+
+    html[data-theme="tron"] .gameboy::before {
+      content: none;
+    }
+
     .gb-brand {
       text-align: center;
       font-size: 13px;
@@ -138,6 +194,10 @@
       letter-spacing: 0.15em;
       font-size: 11px;
       opacity: 0.85;
+    }
+
+    html[data-theme="tron"] .gb-brand {
+      display: none;
     }
 
     /* Screen stack */
@@ -193,12 +253,36 @@
         0 0 0 1px rgba(0, 0, 0, 0.25);
     }
 
+    html[data-theme="tron"] .screen-stack {
+      background: none;
+      border-radius: 0;
+      padding: 0;
+      margin-bottom: 0;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    html[data-theme="tron"] .matrix-label {
+      display: none;
+    }
+
     .lcd-wrap {
       position: relative;
       border-radius: 3px;
       background: #1a2218;
       padding: 8px;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    html[data-theme="tron"] .lcd-wrap {
+      background: none;
+      padding: 0;
+      box-shadow: none;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
     .lcd {
@@ -212,6 +296,15 @@
       color: var(--lcd-pixel);
       text-shadow: 0 0 6px var(--lcd-glow);
       box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.55);
+    }
+
+    html[data-theme="tron"] .lcd {
+      flex: 1;
+      min-height: 60vh;
+      max-height: none;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
     }
 
     .lcd::after {
@@ -231,6 +324,10 @@
       opacity: 0.45;
     }
 
+    html[data-theme="tron"] .lcd::after {
+      display: none;
+    }
+
     .lcd-pre {
       position: relative;
       z-index: 1;
@@ -239,6 +336,43 @@
       line-height: 1.25;
       white-space: pre-wrap;
       word-break: break-word;
+    }
+
+    .wait-cursor {
+      display: none;
+    }
+
+    html[data-theme="tron"] .wait-cursor.active {
+      display: inline-block;
+      width: 0.55em;
+      height: 1.1em;
+      margin-top: 4px;
+      background: #7cf9ff;
+      box-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+      animation: cursor-blink 1s steps(1) infinite;
+    }
+
+    @keyframes cursor-blink {
+      0%, 49% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0;
+      }
+    }
+
+    .input-cursor {
+      display: none;
+    }
+
+    html[data-theme="tron"] .input-cursor {
+      display: inline-block;
+      width: 0.55em;
+      height: 1.1em;
+      background: #7cf9ff;
+      box-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+      animation: cursor-blink 1s steps(1) infinite;
+      flex: 0 0 auto;
     }
 
     /* Controls row */
@@ -253,6 +387,10 @@
       align-items: flex-end;
       justify-content: space-between;
       gap: 0.75rem;
+    }
+
+    html[data-theme="tron"] .controls-deck {
+      display: none;
     }
 
     .speaker {
@@ -280,11 +418,44 @@
       gap: 0.5rem;
     }
 
+    html[data-theme="tron"] .input-row {
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
     .input-row label {
       width: 100%;
       font-size: 14px;
       letter-spacing: 0.06em;
       color: #2f3428;
+    }
+
+    html[data-theme="tron"] .input-row label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .prompt-glyph {
+      display: none;
+    }
+
+    html[data-theme="tron"] .prompt-glyph {
+      display: block;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 22px;
+      color: #7cf9ff;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+      line-height: 1;
+      align-self: center;
     }
 
     .input-row input {
@@ -307,6 +478,26 @@
     .input-row input:focus {
       outline: 2px solid #4a7a4a;
       outline-offset: 2px;
+    }
+
+    html[data-theme="tron"] .input-row input {
+      border: none;
+      border-radius: 0;
+      background: none;
+      color: #7cf9ff;
+      font-family: "VT323", ui-monospace, monospace;
+      box-shadow: none;
+      caret-color: #00e5ff;
+      padding: 0.45rem 0;
+    }
+
+    html[data-theme="tron"] .input-row input::placeholder {
+      color: #2a5a66;
+    }
+
+    html[data-theme="tron"] .input-row input:focus {
+      outline: none;
+      box-shadow: none;
     }
 
     .btn-send {
@@ -334,6 +525,30 @@
     .btn-send:disabled {
       opacity: 0.55;
       cursor: not-allowed;
+    }
+
+    html[data-theme="tron"] .btn-send {
+      border-radius: 0;
+      border: none;
+      color: #7cf9ff;
+      background: none;
+      box-shadow: none;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 20px;
+    }
+
+    html[data-theme="tron"] .btn-send:active {
+      transform: none;
+      color: #fff;
+    }
+
+    html[data-theme="tron"] .btn-send::before {
+      content: "[ ";
+    }
+
+    html[data-theme="tron"] .btn-send::after {
+      content: " ]";
     }
 
     .face-buttons {
@@ -408,15 +623,143 @@
       letter-spacing: 0.03em;
     }
 
+    html[data-theme="tron"] .hint {
+      color: #4fd8e8;
+    }
+
     footer {
       margin-top: 1.5rem;
       text-align: center;
       font-size: 16px;
       color: #6a7560;
     }
+
+    html[data-theme="tron"] footer {
+      color: #3fa8b8;
+    }
+
+    /* —— Menu bar (classic DOS text-mode style, same in both themes) —— */
+    .menubar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 0;
+      padding: 0 0.25rem;
+      height: 26px;
+      align-items: stretch;
+      background: #c0c0c0;
+      border-bottom: 1px solid #000;
+      font-family: ui-monospace, "Cascadia Mono", "Consolas", "Courier New", monospace;
+      font-size: 14px;
+      user-select: none;
+    }
+
+    .menu {
+      position: relative;
+      display: flex;
+    }
+
+    .menu-trigger {
+      font: inherit;
+      background: none;
+      border: none;
+      padding: 0 0.75rem;
+      cursor: pointer;
+      color: #000;
+    }
+
+    .menu-trigger u {
+      text-decoration: underline;
+    }
+
+    .menu-trigger:hover,
+    .menu-trigger[aria-expanded="true"] {
+      background: #000080;
+      color: #fff;
+    }
+
+    .menu-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 190px;
+      display: flex;
+      flex-direction: column;
+      padding: 2px;
+      background: #c0c0c0;
+      border: 1px solid #000;
+      box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    .menu-dropdown[hidden] {
+      display: none;
+    }
+
+    .menu-dropdown button,
+    .menu-label {
+      font: inherit;
+      text-align: left;
+      background: none;
+      border: none;
+      color: #000;
+      padding: 4px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .menu-label {
+      opacity: 0.65;
+      cursor: default;
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .menu-dropdown button:hover {
+      background: #000080;
+      color: #fff;
+    }
+
+    .menu-dropdown button[role="menuitemradio"]::before {
+      content: "\00a0 \00a0 \00a0 ";
+    }
+
+    .menu-dropdown button[role="menuitemradio"][aria-checked="true"]::before {
+      content: "\2713 \00a0 ";
+    }
   </style>
 </head>
 <body>
+  <nav class="menubar" aria-label="Site menu">
+    <div class="menu">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" data-menu="file"><u>F</u>ile</button>
+      <div class="menu-dropdown" role="menu" hidden>
+        <button type="button" role="menuitem" data-action="new-session"><u>N</u>ew Session</button>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" data-menu="edit"><u>E</u>dit</button>
+      <div class="menu-dropdown" role="menu" hidden>
+        <button type="button" role="menuitem" data-action="copy-transcript"><u>C</u>opy Transcript</button>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" data-menu="view"><u>V</u>iew</button>
+      <div class="menu-dropdown" role="menu" hidden>
+        <div class="menu-label">Theme</div>
+        <button type="button" role="menuitemradio" aria-checked="true" data-action="theme-tron"><u>T</u>ron</button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-action="theme-gameboy"><u>G</u>ame Boy</button>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" data-menu="help"><u>H</u>elp</button>
+      <div class="menu-dropdown" role="menu" hidden>
+        <button type="button" role="menuitem" data-action="about"><u>A</u>bout</button>
+      </div>
+    </div>
+  </nav>
+
   <div class="ascii-stage">
     <h1 class="vh">davemost.com</h1>
     <pre class="ascii" aria-hidden="true">                                                                                                         .
@@ -440,7 +783,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
   </div>
 
   <div class="page">
-    <div class="gameboy" role="region" aria-label="Agent console styled like a handheld">
+    <div class="gameboy" role="region" aria-label="Agent console">
       <p class="gb-brand">Dave Boy <span>· dmg-01-ish</span></p>
 
       <div class="screen-stack">
@@ -458,6 +801,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 ────────────
 &gt; agent ready
 &gt; ask me anything.</pre>
+            <span id="wait-cursor" class="wait-cursor" aria-hidden="true"></span>
           </div>
         </div>
       </div>
@@ -476,8 +820,10 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           </div>
         </div>
 
+        <span id="input-anchor" style="display: none"></span>
         <div class="input-row">
           <label for="question">Ask the agent</label>
+          <span class="prompt-glyph" aria-hidden="true">&gt;</span>
           <input
             type="text"
             id="question"
@@ -486,6 +832,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             placeholder="type a question..."
             maxlength="500"
           />
+          <span class="input-cursor" aria-hidden="true"></span>
           <button class="btn-send" type="button" id="send">Send</button>
         </div>
 
@@ -503,6 +850,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var API = "https://k7wa910m4g.execute-api.us-east-1.amazonaws.com/chat";
 
       var y = document.getElementById("y");
+      var lastExchange = null; // { userText, replyText }
       if (y) y.textContent = new Date().getFullYear();
 
       var asciiStage = document.querySelector(".ascii-stage");
@@ -539,6 +887,10 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var lcd = document.getElementById("lcd");
       var send = document.getElementById("send");
       var status = document.getElementById("status");
+      var waitCursor = document.getElementById("wait-cursor");
+      var GREETING = lcd.textContent;
+      var TRON_START = "";
+      var transcript = GREETING;
 
       var typeTimer = null;
 
@@ -599,21 +951,38 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       function go() {
         var text = (q.value || "").trim();
+        var tron = currentTheme() === "tron";
+
         if (!text) {
           cancelTypewriter();
-          setLcd("davemost.com\n────────────\n> type something first.");
+          setLcd(tron ? transcript + "\n\n> type something first." : "davemost.com\n────────────\n> type something first.");
           q.focus();
           return;
         }
 
         cancelTypewriter();
-        setLcd("davemost.com\n────────────\n> " + text + "\n\n...");
+        var prefix = tron
+          ? transcript + "\n\n> " + text + "\n"
+          : "davemost.com\n────────────\n> " + text + "\n\n";
+        setLcd(tron ? prefix : prefix + "...");
+        if (tron) {
+          waitCursor.classList.add("active");
+          q.value = "";
+        }
         setLoading(true);
+
+        var body = { message: text };
+        if (lastExchange) {
+          body.history = [
+            { role: "user", text: lastExchange.userText },
+            { role: "assistant", text: lastExchange.replyText }
+          ];
+        }
 
         fetch(API, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
+          body: JSON.stringify(body)
         })
           .then(function (res) {
             if (!res.ok) throw new Error("HTTP " + res.status);
@@ -621,22 +990,139 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           })
           .then(function (data) {
             var reply = (data && (data.reply || data.message || data.response || data.answer)) || JSON.stringify(data);
-            var prefix = "davemost.com\n────────────\n> " + text + "\n\n";
+            lastExchange = { userText: text, replyText: reply };
+            if (tron) transcript = prefix + reply;
+            waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
             typewrite(prefix, reply, function () { q.focus(); });
           })
           .catch(function () {
-            var prefix = "davemost.com\n────────────\n> " + text + "\n\n";
+            var errText = "[ERROR]\nCould not reach agent.\nTry again.";
+            if (tron) transcript = prefix + errText;
+            waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
-            typewrite(prefix, "[ERROR]\nCould not reach agent.\nTry again.", function () { q.focus(); });
+            typewrite(prefix, errText, function () { q.focus(); });
           });
       }
 
       send.addEventListener("click", go);
       q.addEventListener("keydown", function (e) {
         if (e.key === "Enter") go();
+      });
+
+      var THEME_KEY = "davemost-theme";
+
+      function currentTheme() {
+        return document.documentElement.getAttribute("data-theme") || "tron";
+      }
+
+      function syncThemeMenu() {
+        var t = currentTheme();
+        var tronBtn = document.querySelector('[data-action="theme-tron"]');
+        var gbBtn = document.querySelector('[data-action="theme-gameboy"]');
+        if (tronBtn) tronBtn.setAttribute("aria-checked", String(t === "tron"));
+        if (gbBtn) gbBtn.setAttribute("aria-checked", String(t === "gameboy"));
+      }
+
+      var lcdScreen = document.querySelector(".lcd");
+      var inputRow = document.querySelector(".input-row");
+      var inputAnchor = document.getElementById("input-anchor");
+
+      function placeInputRow(name) {
+        if (name === "tron") {
+          lcdScreen.appendChild(inputRow);
+        } else {
+          inputAnchor.after(inputRow);
+        }
+        lcdScreen.scrollTop = lcdScreen.scrollHeight;
+      }
+
+      function applyTheme(name) {
+        document.documentElement.setAttribute("data-theme", name);
+        try { localStorage.setItem(THEME_KEY, name); } catch (e) {}
+        syncThemeMenu();
+        placeInputRow(name);
+        fitAsciiArt();
+      }
+
+      syncThemeMenu();
+      placeInputRow(currentTheme());
+      if (currentTheme() === "tron") {
+        transcript = TRON_START;
+        setLcd(transcript);
+      }
+
+      var menuTriggers = document.querySelectorAll(".menu-trigger");
+
+      function closeAllMenus() {
+        menuTriggers.forEach(function (btn) {
+          btn.setAttribute("aria-expanded", "false");
+          var panel = btn.nextElementSibling;
+          if (panel) panel.hidden = true;
+        });
+      }
+
+      menuTriggers.forEach(function (btn) {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var panel = btn.nextElementSibling;
+          var isOpen = btn.getAttribute("aria-expanded") === "true";
+          closeAllMenus();
+          if (!isOpen && panel) {
+            panel.hidden = false;
+            btn.setAttribute("aria-expanded", "true");
+          }
+        });
+      });
+
+      document.addEventListener("click", closeAllMenus);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") closeAllMenus();
+      });
+
+      document.querySelectorAll(".menu-dropdown button[data-action]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var action = btn.getAttribute("data-action");
+          closeAllMenus();
+
+          if (action === "new-session") {
+            cancelTypewriter();
+            waitCursor.classList.remove("active");
+            lastExchange = null;
+            transcript = currentTheme() === "tron" ? TRON_START : GREETING;
+            setLcd(transcript);
+            setStatus("Ask something and press Send (or Enter).");
+            q.value = "";
+            q.focus();
+          } else if (action === "copy-transcript") {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(lcd.textContent).then(
+                function () { setStatus("Transcript copied."); },
+                function () { setStatus("Could not copy transcript."); }
+              );
+            } else {
+              setStatus("Clipboard not available.");
+            }
+          } else if (action === "theme-tron") {
+            applyTheme("tron");
+          } else if (action === "theme-gameboy") {
+            applyTheme("gameboy");
+          } else if (action === "about") {
+            cancelTypewriter();
+            waitCursor.classList.remove("active");
+            setLcd(
+              "davemost.com\n────────────\n" +
+              "> HELP\n" +
+              "Ask the agent anything.\n" +
+              "File > New Session to reset.\n" +
+              "Edit > Copy Transcript to copy.\n" +
+              "View > Theme to switch skins.\n" +
+              "— Dave Most"
+            );
+          }
+        });
       });
     })();
   </script>
