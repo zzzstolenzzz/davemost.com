@@ -342,11 +342,16 @@
       display: none;
     }
 
-    html[data-theme="tron"] .wait-cursor.active {
+    html[data-theme="tron"] .wait-cursor {
       display: inline-block;
       width: 0.55em;
       height: 1.1em;
       margin-top: 4px;
+      visibility: hidden;
+    }
+
+    html[data-theme="tron"] .wait-cursor.active {
+      visibility: visible;
       background: #7cf9ff;
       box-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
       animation: cursor-blink 1s steps(1) infinite;
@@ -458,8 +463,15 @@
       align-self: center;
     }
 
-    .input-row input {
+    .input-wrap {
       flex: 1 1 160px;
+      min-width: 0;
+      position: relative;
+      display: flex;
+    }
+
+    .input-row input {
+      width: 100%;
       min-width: 0;
       font: inherit;
       font-size: 22px;
@@ -469,6 +481,10 @@
       background: #dfe2c8;
       color: var(--ink);
       box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    }
+
+    .input-mirror {
+      display: none;
     }
 
     .input-row input::placeholder {
@@ -484,10 +500,10 @@
       border: none;
       border-radius: 0;
       background: none;
-      color: #7cf9ff;
+      color: transparent;
       font-family: "VT323", ui-monospace, monospace;
       box-shadow: none;
-      caret-color: #00e5ff;
+      caret-color: transparent;
       padding: 0.45rem 0;
     }
 
@@ -498,6 +514,21 @@
     html[data-theme="tron"] .input-row input:focus {
       outline: none;
       box-shadow: none;
+    }
+
+    html[data-theme="tron"] .input-mirror {
+      display: flex;
+      align-items: center;
+      position: absolute;
+      inset: 0;
+      padding: 0.45rem 0;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 22px;
+      color: #7cf9ff;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
+      white-space: pre;
+      overflow: hidden;
+      pointer-events: none;
     }
 
     .btn-send {
@@ -625,6 +656,8 @@
 
     html[data-theme="tron"] .hint {
       color: #4fd8e8;
+      display: block;
+      min-height: 2.8em;
     }
 
     footer {
@@ -824,15 +857,17 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         <div class="input-row">
           <label for="question">Ask the agent</label>
           <span class="prompt-glyph" aria-hidden="true">&gt;</span>
-          <input
-            type="text"
-            id="question"
-            name="q"
-            autocomplete="off"
-            placeholder="type a question..."
-            maxlength="500"
-          />
-          <span class="input-cursor" aria-hidden="true"></span>
+          <span class="input-wrap">
+            <input
+              type="text"
+              id="question"
+              name="q"
+              autocomplete="off"
+              placeholder="type a question..."
+              maxlength="500"
+            />
+            <span class="input-mirror" aria-hidden="true"><span id="input-mirror-text"></span><span class="input-cursor"></span></span>
+          </span>
           <button class="btn-send" type="button" id="send">Send</button>
         </div>
 
@@ -888,8 +923,14 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var send = document.getElementById("send");
       var status = document.getElementById("status");
       var waitCursor = document.getElementById("wait-cursor");
+      var mirrorText = document.getElementById("input-mirror-text");
       var GREETING = lcd.textContent;
       var TRON_START = "";
+
+      function syncMirror() {
+        mirrorText.textContent = q.value;
+      }
+      q.addEventListener("input", syncMirror);
       var transcript = GREETING;
 
       var typeTimer = null;
@@ -968,6 +1009,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         if (tron) {
           waitCursor.classList.add("active");
           q.value = "";
+          syncMirror();
         }
         setLoading(true);
 
@@ -995,6 +1037,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
+            syncMirror();
             typewrite(prefix, reply, function () { q.focus(); });
           })
           .catch(function () {
@@ -1003,6 +1046,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             waitCursor.classList.remove("active");
             setLoading(false);
             q.value = "";
+            syncMirror();
             typewrite(prefix, errText, function () { q.focus(); });
           });
       }
@@ -1033,6 +1077,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       function placeInputRow(name) {
         if (name === "tron") {
           lcdScreen.appendChild(inputRow);
+          q.focus({ preventScroll: true });
         } else {
           inputAnchor.after(inputRow);
         }
@@ -1095,6 +1140,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             setLcd(transcript);
             setStatus("Ask something and press Send (or Enter).");
             q.value = "";
+            syncMirror();
             q.focus();
           } else if (action === "copy-transcript") {
             if (navigator.clipboard && navigator.clipboard.writeText) {
