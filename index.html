@@ -299,12 +299,20 @@
     }
 
     html[data-theme="tron"] .lcd {
+      display: flex;
+      flex-direction: column;
       flex: 1;
       min-height: 60vh;
       max-height: none;
       padding: 0;
       border-radius: 0;
       box-shadow: none;
+    }
+
+    html[data-theme="tron"] .lcd-pre {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
     }
 
     .lcd::after {
@@ -413,6 +421,7 @@
       align-items: center;
       gap: 0.4rem;
       margin-top: 0.4rem;
+      flex: 0 0 auto;
     }
 
     .input-row label {
@@ -918,6 +927,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var transcript = GREETING;
 
       var typeTimer = null;
+      var thinkTimer = null;
 
       function escapeHtml(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -931,9 +941,14 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         });
       }
 
+      function scrollLcd() {
+        lcd.scrollTop = lcd.scrollHeight;
+        lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+      }
+
       function setLcd(text) {
         lcd.textContent = text;
-        lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+        scrollLcd();
       }
 
       function cancelTypewriter() {
@@ -941,6 +956,22 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           clearTimeout(typeTimer);
           typeTimer = null;
         }
+      }
+
+      function startThinking(prefix) {
+        cancelTypewriter();
+        stopThinking();
+        var n = 0;
+        function paint() {
+          lcd.textContent = prefix + ".".repeat((n % 3) + 1);
+          scrollLcd();
+          n++;
+        }
+        paint();
+        thinkTimer = setInterval(paint, 350);
+      }
+      function stopThinking() {
+        if (thinkTimer !== null) { clearInterval(thinkTimer); thinkTimer = null; }
       }
 
       function typewrite(prefix, reply, done) {
@@ -952,12 +983,12 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           if (i >= reply.length) {
             typeTimer = null;
             lcd.innerHTML = renderWithLinks(prefix + reply);
-            lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+            scrollLcd();
             if (done) done();
             return;
           }
           lcd.textContent = prefix + reply.slice(0, ++i);
-          lcd.parentElement.scrollTop = lcd.parentElement.scrollHeight;
+          scrollLcd();
           typeTimer = setTimeout(tick, 18);
         }
 
@@ -989,7 +1020,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         var prefix = tron
           ? transcript + "\n\n> " + text + "\n"
           : "davemost.com\n────────────\n> " + text + "\n\n";
-        setLcd(tron ? prefix : prefix + "...");
+        startThinking(prefix);
         if (tron) {
           inputRow.classList.add("responding");
           q.value = "";
@@ -1021,6 +1052,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             setLoading(false);
             q.value = "";
             syncMirror();
+            stopThinking();
             typewrite(prefix, reply, function () {
               inputRow.classList.remove("responding");
               q.focus();
@@ -1032,6 +1064,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             setLoading(false);
             q.value = "";
             syncMirror();
+            stopThinking();
             typewrite(prefix, errText, function () {
               inputRow.classList.remove("responding");
               q.focus();
