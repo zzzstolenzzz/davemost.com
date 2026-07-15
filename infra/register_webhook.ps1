@@ -45,3 +45,26 @@ if ($response.ok) {
 } else {
   Write-Error "Telegram returned an error: $($response | ConvertTo-Json)"
 }
+
+Write-Host "Registering bot command menu..."
+
+$commandsBody = @{
+  commands = @(
+    @{ command = "list";   description = "List everything I've learned about Dave" },
+    @{ command = "teach";  description = "Teach me a new fact: /teach <fact>" },
+    @{ command = "forget"; description = "Forget facts matching a keyword" },
+    @{ command = "help";   description = "Show what I can do" }
+  )
+} | ConvertTo-Json -Depth 5
+
+$cmdResponse = Invoke-RestMethod `
+  -Uri "https://api.telegram.org/bot${botToken}/setMyCommands" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body $commandsBody
+
+if ($cmdResponse.ok) {
+  Write-Host "Command menu registered."
+} else {
+  Write-Error "setMyCommands error: $($cmdResponse | ConvertTo-Json)"
+}

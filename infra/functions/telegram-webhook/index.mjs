@@ -11,6 +11,15 @@ const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const TELEGRAM_SECRET_ARN = process.env.TELEGRAM_SECRET_ARN;
 const CHAT_API_URL = process.env.CHAT_API_URL;
 
+const HELP_TEXT = `🤖 davemost.com agent — here's what I can do:
+
+/list — show everything I've learned about Dave
+/teach <fact> — teach me something new (e.g. /teach Dave ran the 2019 marathon)
+/forget <keyword> — delete facts matching a keyword
+/help — show this message
+
+You can also reply to any of my messages to add or correct a fact, or send a plain question to see what site visitors get.`;
+
 let telegramToken = null;
 
 async function getToken() {
@@ -86,7 +95,21 @@ export const handler = async (event) => {
 
   const chatId = message.chat.id;
   const msgId = message.message_id;
-  const text = message.text.trim();
+  let text = message.text.trim();
+
+  // Telegram slash commands (from the bot's command menu) reuse the text-command logic below.
+  const slash = text.match(/^\/([a-zA-Z]+)(?:@\w+)?(?:\s+([\s\S]*))?$/);
+  if (slash) {
+    const cmd = slash[1].toLowerCase();
+    const arg = (slash[2] || "").trim();
+    if (cmd === "help" || cmd === "start") {
+      await reply(chatId, msgId, HELP_TEXT);
+      return { statusCode: 200, body: "ok" };
+    }
+    if (cmd === "list") text = "LIST";
+    else if (cmd === "teach") text = "TEACH:" + arg;
+    else if (cmd === "forget") text = "FORGET:" + arg;
+  }
 
   // LIST command: show all stored facts
   if (text.toUpperCase() === "LIST") {
