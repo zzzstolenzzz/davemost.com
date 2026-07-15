@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="How Dave Most built davemost.com — the architecture, stack, and guardrails behind a self-made serverless AI agent." />
+  <title>How I Built This — davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --page-bg: #1e1c18;
+      --shell-a: #c4c8a8;
+      --shell-b: #9aa07e;
+      --shell-edge: #5c6148;
+      --bezel: #2a2f24;
+      --lcd-dark: #0f380f;
+      --lcd-pixel: #9bbc0f;
+      --lcd-glow: rgba(155, 188, 15, 0.35);
+      --pad: #2d3228;
+      --btn-a: #8b2942;
+      --btn-b: #4a6b8c;
+      --ink: #1a1f14;
+    }
+
+    html[data-theme="tron"] {
+      --page-bg: #000810;
+      --shell-a: #071018;
+      --shell-b: #020608;
+      --shell-edge: #0fd8ec;
+      --bezel: #00090e;
+      --lcd-dark: #00090c;
+      --lcd-pixel: #7cf9ff;
+      --lcd-glow: rgba(0, 229, 255, 0.45);
+      --pad: #041018;
+      --btn-a: #00c8e0;
+      --btn-b: #ff8c1a;
+      --ink: #cdefff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      font-family: "VT323", ui-monospace, monospace;
+      font-size: 20px;
+      line-height: 1.4;
+      color: var(--ink);
+      background: var(--page-bg);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 255, 255, 0.03) 2px,
+        rgba(255, 255, 255, 0.03) 4px
+      );
+    }
+
+    html[data-theme="tron"] body::before {
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(124, 249, 255, 0.035) 2px,
+        rgba(124, 249, 255, 0.035) 4px
+      );
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.6;
+      background-image: radial-gradient(ellipse 80% 40% at 50% 0%, var(--lcd-glow), transparent 70%);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .term-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.9rem;
+      margin-bottom: 1.75rem;
+      border: 1px solid var(--shell-edge);
+      border-radius: 6px;
+      background: var(--bezel);
+      font-size: 14px;
+      letter-spacing: 0.05em;
+      color: var(--ink);
+      opacity: 0.9;
+    }
+
+    .term-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .term-dot.a { background: var(--btn-a); }
+    .term-dot.b { background: var(--btn-b); }
+    .term-dot.c { background: var(--lcd-pixel); }
+
+    .term-title {
+      margin-left: 0.4rem;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: ui-monospace, "Cascadia Mono", "Consolas", "Courier New", monospace;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: clamp(1.7rem, 5vw, 3rem);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--lcd-pixel);
+      text-shadow: 0 0 12px var(--lcd-glow), 0 0 30px var(--lcd-glow);
+      margin: 0 0 0.6rem;
+    }
+
+    .hero .subtitle {
+      font-size: 1.15rem;
+      max-width: 640px;
+      margin: 0 auto;
+      opacity: 0.9;
+    }
+
+    .panel {
+      border: 1px solid var(--lcd-pixel);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      box-shadow: 0 0 16px var(--lcd-glow), inset 0 0 24px rgba(0, 0, 0, 0.35);
+      padding: 1.5rem 1.5rem 1.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    html[data-theme="tron"] .panel {
+      background: rgba(0, 8, 16, 0.55);
+    }
+
+    .panel h2 {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--lcd-pixel);
+      text-shadow: 0 0 8px var(--lcd-glow);
+      margin: 0 0 1rem;
+    }
+
+    .panel p {
+      margin: 0 0 1rem;
+    }
+
+    .panel p:last-child,
+    .panel ul:last-child {
+      margin-bottom: 0;
+    }
+
+    .svg-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 0.5rem;
+    }
+
+    .svg-scroll svg {
+      display: block;
+      width: 1000px;
+      max-width: none;
+      height: auto;
+    }
+
+    .diagram-svg .node rect {
+      fill: var(--bezel);
+      stroke: var(--lcd-pixel);
+      stroke-width: 2;
+    }
+
+    .diagram-svg .node .title {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      fill: var(--lcd-pixel);
+    }
+
+    .diagram-svg .node .sub {
+      font-family: "VT323", monospace;
+      font-size: 13px;
+      fill: var(--ink);
+      opacity: 0.85;
+    }
+
+    .diagram-svg .edge {
+      stroke: var(--lcd-pixel);
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .diagram-svg .edge.accent {
+      stroke: var(--btn-b);
+      stroke-dasharray: 6 5;
+    }
+
+    .diagram-svg .arrowhead {
+      fill: var(--lcd-pixel);
+    }
+
+    .diagram-svg .arrowhead-accent {
+      fill: var(--btn-b);
+    }
+
+    .diagram-svg .edge-label {
+      font-family: "VT323", monospace;
+      font-size: 12px;
+      fill: var(--ink);
+      opacity: 0.8;
+    }
+
+    .diagram-svg .section-label {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      fill: var(--ink);
+      opacity: 0.55;
+    }
+
+    .diagram-svg .legend-text {
+      font-family: "VT323", monospace;
+      font-size: 13px;
+      fill: var(--ink);
+      opacity: 0.85;
+    }
+
+    .stack-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.6rem 1.5rem;
+    }
+
+    .stack-list li {
+      position: relative;
+      padding-left: 1.4rem;
+    }
+
+    .stack-list li::before {
+      content: "\25B8";
+      position: absolute;
+      left: 0;
+      color: var(--lcd-pixel);
+      text-shadow: 0 0 6px var(--lcd-glow);
+    }
+
+    .guardrail-list {
+      margin: 0 0 1rem;
+      padding-left: 1.4rem;
+    }
+
+    .guardrail-list li {
+      margin-bottom: 0.5rem;
+    }
+
+    .guardrail-list strong {
+      color: var(--lcd-pixel);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .btn-back {
+      display: inline-block;
+      font-family: "VT323", monospace;
+      font-size: 1.1rem;
+      letter-spacing: 0.05em;
+      padding: 0.6rem 1.4rem;
+      border-radius: 20px;
+      text-decoration: none;
+      color: #f2e9dc;
+      background: linear-gradient(180deg, #a53855 0%, var(--btn-a) 55%, #6f2235 100%);
+      box-shadow: 0 3px 0 #4a1a28, inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      margin-bottom: 1rem;
+    }
+
+    .btn-back:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #4a1a28, inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    html[data-theme="tron"] .btn-back {
+      background: none;
+      color: var(--lcd-pixel);
+      border: 1px solid var(--lcd-pixel);
+      border-radius: 0;
+      box-shadow: none;
+      text-shadow: 0 0 6px var(--lcd-glow);
+    }
+
+    html[data-theme="tron"] .btn-back:active {
+      transform: none;
+      color: #fff;
+    }
+
+    footer p {
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="term-bar">
+      <span class="term-dot a" aria-hidden="true"></span>
+      <span class="term-dot b" aria-hidden="true"></span>
+      <span class="term-dot c" aria-hidden="true"></span>
+      <span class="term-title">~/davemost.com/how-it-works.html</span>
+    </div>
+
+    <header class="hero">
+      <h1>How I Built This</h1>
+      <p class="subtitle">davemost.com is a serverless AI agent I designed, built, and hardened myself — here's the anatomy.</p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>System Anatomy</h2>
+        <div class="svg-scroll">
+          <svg class="diagram-svg" viewBox="0 0 1000 600" width="1000" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagramTitle diagramDesc">
+            <title id="diagramTitle">davemost.com architecture diagram</title>
+            <desc id="diagramDesc">Request flow: the visitor browser calls API Gateway, which invokes the Chat Lambda. The Chat Lambda calls Google Gemini 2.5 Flash, reads stored facts from DynamoDB, and fetches API keys from Secrets Manager. Teaching loop: Dave's phone sends a Telegram message to a webhook Lambda, which writes a fact to DynamoDB; those facts flow back into the Chat Lambda's system prompt.</desc>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" class="arrowhead"></path>
+              </marker>
+              <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" class="arrowhead-accent"></path>
+              </marker>
+            </defs>
+
+            <text class="section-label" x="20" y="15">Request flow</text>
+            <text class="section-label" x="20" y="352">Teaching loop</text>
+
+            <!-- Row 1: request flow -->
+            <line class="edge" x1="250" y1="70" x2="298" y2="70" marker-end="url(#arrow)"></line>
+            <text class="edge-label" x="274" y="60" text-anchor="middle">HTTPS POST</text>
+
+            <line class="edge" x1="500" y1="70" x2="568" y2="70" marker-end="url(#arrow)"></line>
+            <text class="edge-label" x="534" y="60" text-anchor="middle">invoke</text>
+
+            <g class="node">
+              <rect x="20" y="20" width="230" height="100" rx="8"></rect>
+              <text class="title" x="135" y="58" text-anchor="middle">Visitor Browser</text>
+              <text class="sub" x="135" y="80" text-anchor="middle">Game Boy / Tron UI</text>
+              <text class="sub" x="135" y="99" text-anchor="middle">index.html on GitHub Pages</text>
+            </g>
+
+            <g class="node">
+              <rect x="300" y="20" width="200" height="100" rx="8"></rect>
+              <text class="title" x="400" y="58" text-anchor="middle">API Gateway</text>
+              <text class="sub" x="400" y="80" text-anchor="middle">HTTP API</text>
+              <text class="sub" x="400" y="99" text-anchor="middle">per-IP rate limited</text>
+            </g>
+
+            <g class="node">
+              <rect x="570" y="20" width="230" height="100" rx="8"></rect>
+              <text class="title" x="685" y="58" text-anchor="middle">Chat Lambda</text>
+              <text class="sub" x="685" y="80" text-anchor="middle">Node 20 runtime</text>
+              <text class="sub" x="685" y="99" text-anchor="middle">guardrail: on-topic only</text>
+            </g>
+
+            <!-- Fan-out from Chat Lambda -->
+            <path class="edge" d="M635,120 L485,190" marker-end="url(#arrow)"></path>
+            <text class="edge-label" x="560" y="148" text-anchor="middle">prompt</text>
+
+            <path class="edge" d="M665,120 L665,190" marker-end="url(#arrow)"></path>
+            <text class="edge-label" x="655" y="158" text-anchor="end">read facts</text>
+
+            <path class="edge" d="M735,120 L885,190" marker-end="url(#arrow)"></path>
+            <text class="edge-label" x="810" y="148" text-anchor="middle">get key</text>
+
+            <path class="edge accent" d="M715,190 L715,120" marker-end="url(#arrow-accent)"></path>
+            <text class="edge-label" x="725" y="158" text-anchor="start">facts → prompt</text>
+
+            <g class="node">
+              <rect x="395" y="190" width="180" height="90" rx="8"></rect>
+              <text class="title" x="485" y="230" text-anchor="middle">Google Gemini</text>
+              <text class="sub" x="485" y="252" text-anchor="middle">2.5 Flash</text>
+            </g>
+
+            <g class="node">
+              <rect x="595" y="190" width="180" height="90" rx="8"></rect>
+              <text class="title" x="685" y="230" text-anchor="middle">DynamoDB</text>
+              <text class="sub" x="685" y="252" text-anchor="middle">stored facts</text>
+            </g>
+
+            <g class="node">
+              <rect x="795" y="190" width="180" height="90" rx="8"></rect>
+              <text class="title" x="885" y="230" text-anchor="middle">Secrets Manager</text>
+              <text class="sub" x="885" y="252" text-anchor="middle">API keys</text>
+            </g>
+
+            <!-- Row 3: teaching loop -->
+            <line class="edge" x1="210" y1="410" x2="268" y2="410" marker-end="url(#arrow)"></line>
+            <text class="edge-label" x="239" y="398" text-anchor="middle">new fact</text>
+
+            <path class="edge" d="M400,360 L400,320 L645,320 L645,282" marker-end="url(#arrow)"></path>
+            <text class="edge-label" x="522" y="312" text-anchor="middle">writes fact</text>
+
+            <g class="node">
+              <rect x="20" y="360" width="190" height="100" rx="8"></rect>
+              <text class="title" x="115" y="405" text-anchor="middle">Dave's Phone</text>
+              <text class="sub" x="115" y="430" text-anchor="middle">Telegram</text>
+            </g>
+
+            <g class="node">
+              <rect x="270" y="360" width="260" height="100" rx="8"></rect>
+              <text class="title" x="400" y="395" text-anchor="middle">Telegram Webhook</text>
+              <text class="title" x="400" y="415" text-anchor="middle">Lambda</text>
+              <text class="sub" x="400" y="438" text-anchor="middle">secret token + user-ID allowlist</text>
+            </g>
+
+            <!-- Legend -->
+            <line class="edge" x1="20" y1="520" x2="65" y2="520"></line>
+            <text class="legend-text" x="78" y="524">request / data flow</text>
+            <line class="edge accent" x1="20" y1="552" x2="65" y2="552"></line>
+            <text class="legend-text" x="78" y="556">facts feed the system prompt</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>The Stack</h2>
+        <ul class="stack-list">
+          <li>AWS Lambda (Node 20)</li>
+          <li>API Gateway (HTTP API)</li>
+          <li>DynamoDB</li>
+          <li>Secrets Manager</li>
+          <li>Google Gemini 2.5 Flash</li>
+          <li>Telegram Bot API</li>
+          <li>Terraform (infrastructure-as-code)</li>
+          <li>GitHub Pages</li>
+          <li>vanilla JS/CSS (no framework)</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>How the Agent Stays On-Topic — and Safe</h2>
+        <p>The agent has one job: answer questions about me — my work, my projects, how I think. Ask it to write your homework or debug your Python and it declines. That boundary is enforced server-side, not just suggested in a prompt.</p>
+        <p>I treat this like a security surface, not a chatbot demo. I threat-modeled it myself and hardened the paths an attacker would actually try:</p>
+        <ul class="guardrail-list">
+          <li><strong>Sanitized conversation history</strong> — the client sends prior turns for context, so that history is treated as untrusted input and cleaned before it reaches the model. That closes the obvious jailbreak: forging a fake assistant turn that pretends the guardrail already gave permission.</li>
+          <li><strong>Message length caps</strong> — input length is capped so nobody can turn my API bill into a denial-of-wallet attack.</li>
+          <li><strong>Per-IP rate limiting</strong> — every caller gets a per-minute budget tracked in DynamoDB; a flood gets a 429 instead of burning my Gemini quota or spamming my phone.</li>
+          <li><strong>Locked-down teaching channel</strong> — the Telegram webhook that lets me add new facts checks a shared secret token on every request and only accepts commands from my own Telegram user ID.</li>
+        </ul>
+        <p>I attack my own systems before anyone else gets the chance.</p>
+      </section>
+
+      <section class="panel">
+        <h2>The Teaching Loop</h2>
+        <p>I keep the agent current without redeploying code. When I want it to know something new about me, I just text it to a private Telegram bot. The webhook Lambda verifies it's really me — secret token plus a user-ID allowlist — then writes the fact to DynamoDB.</p>
+        <p>The Chat Lambda reads that table on every request and folds the facts into its system prompt, so the agent's knowledge grows from a text message, not a deploy pipeline.</p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="btn-back" href="index.html">&lt; Back to davemost.com</a>
+      <p>© <span id="y"></span> davemost.com</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

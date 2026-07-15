@@ -774,6 +774,7 @@
       <button class="menu-trigger" type="button" aria-haspopup="true" aria-expanded="false" data-menu="help"><u>H</u>elp</button>
       <div class="menu-dropdown" role="menu" hidden>
         <button type="button" role="menuitem" data-action="about"><u>A</u>bout</button>
+        <button type="button" role="menuitem" data-action="how-built"><u>H</u>ow It Was Built</button>
       </div>
     </div>
   </nav>
@@ -1156,6 +1157,8 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
               "View > Theme to switch skins.\n" +
               "— Dave Most"
             );
+          } else if (action === "how-built") {
+            window.location.href = "how-it-works.html";
           }
         });
       });
