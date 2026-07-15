@@ -1,4 +1,4 @@
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, ScanCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 const dynamo = new DynamoDBClient({});
@@ -8,13 +8,19 @@ const TABLE_NAME = process.env.TABLE_NAME;
 const TELEGRAM_USER_ID = process.env.TELEGRAM_USER_ID;
 const GEMINI_SECRET_ARN = process.env.GEMINI_SECRET_ARN;
 const TELEGRAM_SECRET_ARN = process.env.TELEGRAM_SECRET_ARN;
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET;
+const RATELIMIT_TABLE = process.env.RATELIMIT_TABLE;
 
 const MAX_MESSAGE_LEN = 2000;
 const MAX_HISTORY_ITEMS = 6;
+const CORRECTIONS_TTL_MS = 30000;
+const RATE_LIMIT_PER_MIN = 20;
 
 // Cached across warm invocations
 let geminiKey = null;
 let telegramToken = null;
+let correctionsCache = null;
+let correctionsCacheAt = 0;
 
 async function loadSecrets() {
   const [g, t] = await Promise.all([
@@ -36,8 +42,14 @@ function demarshall(item) {
 }
 
 async function getCorrections() {
+  const now = Date.now();
+  if (correctionsCache && now - correctionsCacheAt < CORRECTIONS_TTL_MS) {
+    return correctionsCache;
+  }
   const { Items = [] } = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME, ConsistentRead: true }));
-  return Items.map(demarshall).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  correctionsCache = Items.map(demarshall).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  correctionsCacheAt = now;
+  return correctionsCache;
 }
 
 function isAfterHours() {
@@ -209,6 +221,37 @@ export const handler = async (event) => {
         .map((h) => ({ role: h.role, text: h.text.trim().slice(0, MAX_MESSAGE_LEN) }))
     : [];
 
+  const isInternal = Boolean(INTERNAL_SECRET) && event.headers?.["x-internal-secret"] === INTERNAL_SECRET;
+  const silent = Boolean(_silent) && isInternal;
+
+  if (RATELIMIT_TABLE && !isInternal) {
+    try {
+      const ip = event.requestContext?.http?.sourceIp || "unknown";
+      const windowId = Math.floor(Date.now() / 60000);
+      const exp = Math.floor(Date.now() / 1000) + 120;
+      const res = await dynamo.send(
+        new UpdateItemCommand({
+          TableName: RATELIMIT_TABLE,
+          Key: { id: { S: `${ip}#${windowId}` } },
+          UpdateExpression: "SET #ttl = :exp ADD #c :one",
+          ExpressionAttributeNames: { "#c": "count", "#ttl": "ttl" },
+          ExpressionAttributeValues: { ":one": { N: "1" }, ":exp": { N: String(exp) } },
+          ReturnValues: "UPDATED_NEW",
+        })
+      );
+      const count = Number(res.Attributes.count.N);
+      if (count > RATE_LIMIT_PER_MIN) {
+        return {
+          statusCode: 429,
+          body: JSON.stringify({ reply: "You're sending messages too quickly — give it a minute and try again." }),
+        };
+      }
+    } catch (err) {
+      console.error("Rate limiter error:", err);
+      // Fail open — a limiter fault must never take the site down
+    }
+  }
+
   if (!geminiKey || !telegramToken) await loadSecrets();
 
   const corrections = await getCorrections();
@@ -236,7 +279,7 @@ export const handler = async (event) => {
 
   // Policy enforcement
   if (trimmed === "POLICY_REJECT") {
-    await sendTelegram(`🚫 BLOCKED (not about Dave)\nQ: ${message}`);
+    if (!silent) await sendTelegram(`🚫 BLOCKED (not about Dave)\nQ: ${message}`);
     return {
       statusCode: 200,
       body: JSON.stringify({
@@ -254,7 +297,7 @@ export const handler = async (event) => {
   }
 
   // Telegram logging — skipped when called internally (e.g. from the Telegram webhook ASK: command)
-  if (!_silent) {
+  if (!silent) {
     if (uncertain) {
       await sendTelegram(
         `⚠️ UNCERTAIN — reply to this message to teach me a new fact!\n\nQ: ${message}\nA: ${reply}`
@@ -266,6 +309,6 @@ export const handler = async (event) => {
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ reply, ...(_silent && uncertain ? { _uncertain: true } : {}) }),
+    body: JSON.stringify({ reply, ...(silent && uncertain ? { _uncertain: true } : {}) }),
   };
 };

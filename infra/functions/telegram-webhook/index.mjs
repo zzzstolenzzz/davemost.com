@@ -148,7 +148,7 @@ export const handler = async (event) => {
   try {
     const res = await fetch(CHAT_API_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-internal-secret": WEBHOOK_SECRET },
       body: JSON.stringify({ message: text, _silent: true, history }),
     });
     const data = await res.json();

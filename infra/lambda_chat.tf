@@ -33,6 +33,12 @@ resource "aws_iam_role_policy" "chat_lambda" {
         Resource = aws_dynamodb_table.corrections.arn
       },
       {
+        Sid      = "RateLimit"
+        Effect   = "Allow"
+        Action   = ["dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.ratelimit.arn
+      },
+      {
         Sid    = "SecretsRead"
         Effect = "Allow"
         Action = ["secretsmanager:GetSecretValue"]
@@ -68,6 +74,8 @@ resource "aws_lambda_function" "chat" {
       TELEGRAM_USER_ID    = var.telegram_user_id
       GEMINI_SECRET_ARN   = aws_secretsmanager_secret.gemini_key.arn
       TELEGRAM_SECRET_ARN = aws_secretsmanager_secret.bot_token.arn
+      INTERNAL_SECRET     = random_password.webhook_secret.result
+      RATELIMIT_TABLE     = aws_dynamodb_table.ratelimit.name
     }
   }
 }
