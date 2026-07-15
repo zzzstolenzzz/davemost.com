@@ -132,24 +132,20 @@ export const handler = async (event) => {
 
   const botMessage = message.reply_to_message?.text ?? null;
 
-  // Replying to an uncertain alert (from the website widget or asked directly in
-  // Telegram) teaches the fact directly — no TEACH: needed.
-  const isUncertainReply =
-    botMessage?.startsWith("⚠️ UNCERTAIN") ||
-    botMessage?.includes("⚠️ Not sure — reply to this message to correct me.");
-  if (isUncertainReply) {
+  // Any reply to a bot message is Dave teaching/correcting a fact — never
+  // gated on whether the bot's message was an "uncertain" alert.
+  if (botMessage) {
     const questionMatch = botMessage.match(/Q: ([\s\S]*?)\nA: /);
     await storeFact(chatId, msgId, text, questionMatch ? questionMatch[1].trim() : undefined);
     return { statusCode: 200, body: "ok" };
   }
 
-  // Default: ask the agent and reply, passing prior bot message as history if this is a reply
-  const history = botMessage ? [{ role: "assistant", text: botMessage }] : undefined;
+  // Default: ask the agent and reply
   try {
     const res = await fetch(CHAT_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-internal-secret": WEBHOOK_SECRET },
-      body: JSON.stringify({ message: text, _silent: true, history }),
+      body: JSON.stringify({ message: text, _silent: true }),
     });
     const data = await res.json();
     const answer = data.reply ?? "No response.";
