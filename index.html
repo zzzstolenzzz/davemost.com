@@ -299,17 +299,12 @@
     }
 
     html[data-theme="tron"] .lcd {
-      flex: 0 0 auto;
-      min-height: 0;
+      flex: 1;
+      min-height: 60vh;
       max-height: none;
       padding: 0;
       border-radius: 0;
       box-shadow: none;
-    }
-
-    html[data-theme="tron"] .lcd-pre {
-      max-height: 50vh;
-      overflow-y: auto;
     }
 
     .lcd::after {
@@ -1093,7 +1088,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       function placeInputRow(name) {
         if (name === "tron") {
-          lcdScreen.insertBefore(inputRow, lcdScreen.firstChild);
+          lcdScreen.appendChild(inputRow);
           q.focus({ preventScroll: true });
         } else {
           inputAnchor.after(inputRow);
