@@ -412,7 +412,11 @@
       flex-wrap: nowrap;
       align-items: center;
       gap: 0.4rem;
-      margin-top: 0.4rem;
+      margin-top: calc(22px * 1.25); /* one blank line, matching the \n\n transcript separator */
+    }
+
+    html[data-theme="tron"] .lcd-pre:empty + .input-row {
+      margin-top: 0;
     }
 
     .input-row label {
@@ -489,7 +493,8 @@
       font-family: "VT323", ui-monospace, monospace;
       box-shadow: none;
       caret-color: transparent;
-      padding: 0.45rem 0;
+      padding: 0;
+      line-height: 1.25;
     }
 
     html[data-theme="tron"] .input-row input::placeholder {
@@ -506,7 +511,7 @@
       align-items: center;
       position: absolute;
       inset: 0;
-      padding: 0.45rem 0;
+      padding: 0;
       font-family: "VT323", ui-monospace, monospace;
       font-size: 22px;
       color: #7cf9ff;
@@ -552,6 +557,8 @@
       text-shadow: 0 0 6px rgba(0, 229, 255, 0.8);
       font-family: "VT323", ui-monospace, monospace;
       font-size: 20px;
+      padding-top: 0;
+      padding-bottom: 0;
     }
 
     html[data-theme="tron"] .btn-send:active {
@@ -999,17 +1006,18 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       function go() {
         var text = (q.value || "").trim();
         var tron = currentTheme() === "tron";
+        var sep = transcript ? "\n\n" : "";
 
         if (!text) {
           cancelTypewriter();
-          setLcd(tron ? transcript + "\n\n> type something first." : "davemost.com\n────────────\n> type something first.");
+          setLcd(tron ? transcript + sep + "> type something first." : "davemost.com\n────────────\n> type something first.");
           q.focus();
           return;
         }
 
         cancelTypewriter();
         var prefix = tron
-          ? transcript + "\n\n> " + text + "\n"
+          ? transcript + sep + "> " + text + "\n"
           : "davemost.com\n────────────\n> " + text + "\n\n";
         startThinking(prefix);
         if (tron) {
