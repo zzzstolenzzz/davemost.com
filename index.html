@@ -775,6 +775,7 @@
         <div class="menu-label">Theme</div>
         <button type="button" role="menuitemradio" aria-checked="true" data-action="theme-tron"><u>T</u>ron</button>
         <button type="button" role="menuitemradio" aria-checked="false" data-action="theme-gameboy"><u>G</u>ame Boy</button>
+        <button type="button" role="menuitem" data-action="view-bladerunner"><u>B</u>lade Runner</button>
       </div>
     </div>
     <div class="menu">
@@ -1178,6 +1179,8 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             applyTheme("tron");
           } else if (action === "theme-gameboy") {
             applyTheme("gameboy");
+          } else if (action === "view-bladerunner") {
+            setStatus("Blade Runner view — coming soon.");
           } else if (action === "about") {
             cancelTypewriter();
             setLcd(
