@@ -27,6 +27,12 @@ resource "aws_iam_role_policy" "webhook_lambda" {
         Resource = aws_dynamodb_table.corrections.arn
       },
       {
+        Sid      = "VisitorsReadWrite"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.visitors.arn
+      },
+      {
         Sid    = "SecretsRead"
         Effect = "Allow"
         Action = ["secretsmanager:GetSecretValue"]

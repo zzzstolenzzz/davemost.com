@@ -8,6 +8,21 @@ resource "aws_secretsmanager_secret" "gemini_key" {
   description = "Google Gemini API key for davemost.com chat agent"
 }
 
+resource "random_password" "visitor_salt" {
+  length  = 32
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "visitor_salt" {
+  name        = var.visitor_salt_secret_name
+  description = "Salt for hashing visitor network fingerprints for davemost.com chat agent"
+}
+
+resource "aws_secretsmanager_secret_version" "visitor_salt" {
+  secret_id     = aws_secretsmanager_secret.visitor_salt.id
+  secret_string = random_password.visitor_salt.result
+}
+
 # After terraform apply, store the actual secret values:
 #   aws secretsmanager put-secret-value \
 #     --secret-id davemost/telegram-bot-token \

@@ -20,6 +20,7 @@ resource "aws_lambda_function" "webhook" {
       WEBHOOK_SECRET      = random_password.webhook_secret.result
       TELEGRAM_SECRET_ARN = aws_secretsmanager_secret.bot_token.arn
       CHAT_API_URL        = "${trimsuffix(aws_apigatewayv2_stage.chat.invoke_url, "/")}/chat"
+      VISITORS_TABLE      = aws_dynamodb_table.visitors.name
     }
   }
 }

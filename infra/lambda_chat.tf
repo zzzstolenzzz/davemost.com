@@ -39,12 +39,19 @@ resource "aws_iam_role_policy" "chat_lambda" {
         Resource = aws_dynamodb_table.ratelimit.arn
       },
       {
+        Sid      = "Visitors"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Scan"]
+        Resource = aws_dynamodb_table.visitors.arn
+      },
+      {
         Sid    = "SecretsRead"
         Effect = "Allow"
         Action = ["secretsmanager:GetSecretValue"]
         Resource = [
           aws_secretsmanager_secret.bot_token.arn,
           aws_secretsmanager_secret.gemini_key.arn,
+          aws_secretsmanager_secret.visitor_salt.arn,
         ]
       },
       {
@@ -76,6 +83,8 @@ resource "aws_lambda_function" "chat" {
       TELEGRAM_SECRET_ARN = aws_secretsmanager_secret.bot_token.arn
       INTERNAL_SECRET     = random_password.webhook_secret.result
       RATELIMIT_TABLE     = aws_dynamodb_table.ratelimit.name
+      VISITORS_TABLE      = aws_dynamodb_table.visitors.name
+      VISITOR_SALT_ARN    = aws_secretsmanager_secret.visitor_salt.arn
     }
   }
 }

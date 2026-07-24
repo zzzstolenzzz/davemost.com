@@ -29,3 +29,14 @@ resource "aws_dynamodb_table" "ratelimit" {
     enabled        = true
   }
 }
+
+resource "aws_dynamodb_table" "visitors" {
+  name         = "davemostVisitors"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
+}

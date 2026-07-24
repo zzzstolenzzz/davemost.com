@@ -1,4 +1,4 @@
-import { DynamoDBClient, PutItemCommand, ScanCommand, DeleteItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, PutItemCommand, ScanCommand, DeleteItemCommand, GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 import { randomUUID } from "crypto";
 
@@ -6,6 +6,7 @@ const dynamo = new DynamoDBClient({});
 const sm = new SecretsManagerClient({});
 
 const TABLE_NAME = process.env.TABLE_NAME;
+const VISITORS_TABLE = process.env.VISITORS_TABLE;
 const AUTHORIZED_USER_ID = Number(process.env.TELEGRAM_USER_ID);
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const TELEGRAM_SECRET_ARN = process.env.TELEGRAM_SECRET_ARN;
@@ -16,6 +17,7 @@ const HELP_TEXT = `🤖 davemost.com agent — here's what I can do:
 /list — show everything I've learned about Dave
 /teach <fact> — teach me something new (e.g. /teach Dave ran the 2019 marathon)
 /forget <keyword> — delete facts matching a keyword
+/name <ordinal> <label> — tag a site visitor (e.g. /name 7 liam)
 /help — show this message
 
 You can also reply to any of my messages to add or correct a fact, or send a plain question to see what site visitors get.`;
@@ -58,6 +60,25 @@ async function forgetFact(keyword) {
     )
   );
   return matches.length;
+}
+
+// Reverse-lookup item `ord#<n>` (written by the chat Lambda when a visitor
+// is first seen) maps an ordinal to its visitorId.
+async function nameVisitor(ordinal, label) {
+  const { Item } = await dynamo.send(
+    new GetItemCommand({ TableName: VISITORS_TABLE, Key: { id: { S: `ord#${ordinal}` } } })
+  );
+  const visitorId = Item?.visitorId?.S;
+  if (!visitorId) return false;
+  await dynamo.send(
+    new UpdateItemCommand({
+      TableName: VISITORS_TABLE,
+      Key: { id: { S: visitorId } },
+      UpdateExpression: "SET label = :l",
+      ExpressionAttributeValues: { ":l": { S: label } },
+    })
+  );
+  return true;
 }
 
 async function storeFact(chatId, msgId, correction, context) {
@@ -109,6 +130,7 @@ export const handler = async (event) => {
     if (cmd === "list") text = "LIST";
     else if (cmd === "teach") text = "TEACH:" + arg;
     else if (cmd === "forget") text = "FORGET:" + arg;
+    else if (cmd === "name") text = "NAME:" + arg;
   }
 
   // LIST command: show all stored facts
@@ -150,6 +172,20 @@ export const handler = async (event) => {
       return { statusCode: 200, body: "ok" };
     }
     await storeFact(chatId, msgId, fact);
+    return { statusCode: 200, body: "ok" };
+  }
+
+  // NAME command: tag a site visitor's ordinal with a label
+  if (text.toUpperCase().startsWith("NAME:")) {
+    const arg = text.slice("NAME:".length).trim();
+    const match = arg.match(/^(\d+)\s+(.+)$/);
+    if (!match) {
+      await reply(chatId, msgId, "Usage: /name <ordinal> <label>");
+      return { statusCode: 200, body: "ok" };
+    }
+    const [, ordinal, label] = match;
+    const ok = await nameVisitor(ordinal, label.trim());
+    await reply(chatId, msgId, ok ? `Tagged #${ordinal} as ${label.trim()}` : `No visitor found with #${ordinal}.`);
     return { statusCode: 200, body: "ok" };
   }
 

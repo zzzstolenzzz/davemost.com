@@ -881,6 +881,19 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var lastExchange = null; // { userText, replyText }
       if (y) y.textContent = new Date().getFullYear();
 
+      function getVisitorId() {
+        var id;
+        try { id = localStorage.getItem("dm_vid"); } catch (e) {}
+        if (!id) {
+          var bytes = new Uint8Array(8);
+          crypto.getRandomValues(bytes);
+          id = Array.prototype.map.call(bytes, function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+          try { localStorage.setItem("dm_vid", id); } catch (e) {}
+        }
+        return id;
+      }
+      var visitorId = getVisitorId();
+
       var asciiStage = document.querySelector(".ascii-stage");
       var asciiPre = document.querySelector(".ascii-stage .ascii");
       var ASCII_BASE_PX = 10;
@@ -1028,7 +1041,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         }
         setLoading(true);
 
-        var body = { message: text };
+        var body = { message: text, visitorId: visitorId, referrer: document.referrer, tz: Intl.DateTimeFormat().resolvedOptions().timeZone };
         if (lastExchange) {
           body.history = [
             { role: "user", text: lastExchange.userText },
