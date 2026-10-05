@@ -374,7 +374,7 @@
         <div class="svg-scroll">
           <svg class="diagram-svg" viewBox="0 0 1000 600" width="1000" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagramTitle diagramDesc">
             <title id="diagramTitle">davemost.com architecture diagram</title>
-            <desc id="diagramDesc">Request flow: the visitor browser calls API Gateway, which invokes the Chat Lambda. The Chat Lambda calls Google Gemini 2.5 Flash, reads stored facts from DynamoDB, and fetches API keys from Secrets Manager. Teaching loop: Dave's phone sends a Telegram message to a webhook Lambda, which writes a fact to DynamoDB; those facts flow back into the Chat Lambda's system prompt.</desc>
+            <desc id="diagramDesc">Request flow: the visitor browser calls a Cloudflare Worker. The Worker calls Google Gemini 2.5 Flash, reads stored facts from Workers KV, and uses API keys held as Worker secrets. Teaching loop: Dave's phone sends a Telegram message to the same Worker's webhook route, which writes a fact to Workers KV; those facts flow back into the system prompt.</desc>
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M0,0 L10,5 L0,10 z" class="arrowhead"></path>
@@ -391,31 +391,21 @@
             <line class="edge" x1="250" y1="70" x2="298" y2="70" marker-end="url(#arrow)"></line>
             <text class="edge-label" x="274" y="60" text-anchor="middle">HTTPS POST</text>
 
-            <line class="edge" x1="500" y1="70" x2="568" y2="70" marker-end="url(#arrow)"></line>
-            <text class="edge-label" x="534" y="60" text-anchor="middle">invoke</text>
-
             <g class="node">
               <rect x="20" y="20" width="230" height="100" rx="8"></rect>
               <text class="title" x="135" y="58" text-anchor="middle">Visitor Browser</text>
-              <text class="sub" x="135" y="80" text-anchor="middle">Game Boy / Tron UI</text>
+              <text class="sub" x="135" y="80" text-anchor="middle">Tron / Blade Runner / Game Boy UI</text>
               <text class="sub" x="135" y="99" text-anchor="middle">index.html on GitHub Pages</text>
             </g>
 
             <g class="node">
-              <rect x="300" y="20" width="200" height="100" rx="8"></rect>
-              <text class="title" x="400" y="58" text-anchor="middle">API Gateway</text>
-              <text class="sub" x="400" y="80" text-anchor="middle">HTTP API</text>
-              <text class="sub" x="400" y="99" text-anchor="middle">per-IP rate limited</text>
+              <rect x="300" y="20" width="500" height="100" rx="8"></rect>
+              <text class="title" x="550" y="58" text-anchor="middle">Cloudflare Worker</text>
+              <text class="sub" x="550" y="80" text-anchor="middle">/chat route · runs at the edge</text>
+              <text class="sub" x="550" y="99" text-anchor="middle">guardrail: on-topic only</text>
             </g>
 
-            <g class="node">
-              <rect x="570" y="20" width="230" height="100" rx="8"></rect>
-              <text class="title" x="685" y="58" text-anchor="middle">Chat Lambda</text>
-              <text class="sub" x="685" y="80" text-anchor="middle">Node 20 runtime</text>
-              <text class="sub" x="685" y="99" text-anchor="middle">guardrail: on-topic only</text>
-            </g>
-
-            <!-- Fan-out from Chat Lambda -->
+            <!-- Fan-out from the Worker -->
             <path class="edge" d="M635,120 L485,190" marker-end="url(#arrow)"></path>
             <text class="edge-label" x="560" y="148" text-anchor="middle">prompt</text>
 
@@ -436,13 +426,13 @@
 
             <g class="node">
               <rect x="595" y="190" width="180" height="90" rx="8"></rect>
-              <text class="title" x="685" y="230" text-anchor="middle">DynamoDB</text>
+              <text class="title" x="685" y="230" text-anchor="middle">Workers KV</text>
               <text class="sub" x="685" y="252" text-anchor="middle">stored facts</text>
             </g>
 
             <g class="node">
               <rect x="795" y="190" width="180" height="90" rx="8"></rect>
-              <text class="title" x="885" y="230" text-anchor="middle">Secrets Manager</text>
+              <text class="title" x="885" y="230" text-anchor="middle">Worker Secrets</text>
               <text class="sub" x="885" y="252" text-anchor="middle">API keys</text>
             </g>
 
@@ -462,7 +452,7 @@
             <g class="node">
               <rect x="270" y="360" width="260" height="100" rx="8"></rect>
               <text class="title" x="400" y="395" text-anchor="middle">Telegram Webhook</text>
-              <text class="title" x="400" y="415" text-anchor="middle">Lambda</text>
+              <text class="title" x="400" y="415" text-anchor="middle">same Worker, /webhook</text>
               <text class="sub" x="400" y="438" text-anchor="middle">secret token + user-ID allowlist</text>
             </g>
 
@@ -478,13 +468,11 @@
       <section class="panel">
         <h2>The Stack</h2>
         <ul class="stack-list">
-          <li>AWS Lambda (Node 20)</li>
-          <li>API Gateway (HTTP API)</li>
-          <li>DynamoDB</li>
-          <li>Secrets Manager</li>
+          <li>Cloudflare Workers</li>
+          <li>Workers KV</li>
           <li>Google Gemini 2.5 Flash</li>
           <li>Telegram Bot API</li>
-          <li>Terraform (infrastructure-as-code)</li>
+          <li>Wrangler (deploys from a private repo)</li>
           <li>GitHub Pages</li>
           <li>vanilla JS/CSS (no framework)</li>
         </ul>
@@ -497,16 +485,16 @@
         <ul class="guardrail-list">
           <li><strong>Sanitized conversation history</strong> — the client sends prior turns for context, so that history is treated as untrusted input and cleaned before it reaches the model. That closes the obvious jailbreak: forging a fake assistant turn that pretends the guardrail already gave permission.</li>
           <li><strong>Message length caps</strong> — input length is capped so nobody can turn my API bill into a denial-of-wallet attack.</li>
-          <li><strong>Per-IP rate limiting</strong> — every caller gets a per-minute budget tracked in DynamoDB; a flood gets a 429 instead of burning my Gemini quota or spamming my phone.</li>
-          <li><strong>Locked-down teaching channel</strong> — the Telegram webhook that lets me add new facts checks a shared secret token on every request and only accepts commands from my own Telegram user ID.</li>
+          <li><strong>Cheap pre-filter</strong> — obvious off-topic requests like bare arithmetic are rejected before they ever reach the model, so they cost nothing.</li>
+          <li><strong>Locked-down teaching channel</strong> — the Telegram webhook that lets me add new facts checks a shared secret token on every request and only accepts commands from my own Telegram user ID. If either is missing, it fails closed.</li>
         </ul>
         <p>I attack my own systems before anyone else gets the chance.</p>
       </section>
 
       <section class="panel">
         <h2>The Teaching Loop</h2>
-        <p>I keep the agent current without redeploying code. When I want it to know something new about me, I just text it to a private Telegram bot. The webhook Lambda verifies it's really me — secret token plus a user-ID allowlist — then writes the fact to DynamoDB.</p>
-        <p>The Chat Lambda reads that table on every request and folds the facts into its system prompt, so the agent's knowledge grows from a text message, not a deploy pipeline.</p>
+        <p>I keep the agent current without redeploying code. When I want it to know something new about me, I just text it to a private Telegram bot. The Worker's webhook route verifies it's really me — secret token plus a user-ID allowlist — then writes the fact to Workers KV. If the agent isn't sure of an answer, it pings me, and I just reply to that message with the right one.</p>
+        <p>The Worker reads those facts on every request and folds them into its system prompt, so the agent's knowledge grows from a text message, not a deploy pipeline.</p>
       </section>
     </main>
 
