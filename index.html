@@ -22,6 +22,12 @@
       font-display: swap;
     }
 
+    @font-face {
+      font-family: "BladeRunner";
+      src: url("fonts/BladeRunner.ttf") format("truetype");
+      font-display: swap;
+    }
+
     :root {
       --page-bg: #1e1c18;
       --shell-a: #c4c8a8;
@@ -76,7 +82,9 @@
         );
     }
 
-    html[data-theme="tron"] body {
+    html[data-theme="tron"] body,
+
+    html[data-theme="bladerunner"] body {
       background-image: none;
       background-color: #000;
     }
@@ -98,7 +106,9 @@
       padding: 0 1rem 2.5rem;
     }
 
-    html[data-theme="tron"] .page {
+    html[data-theme="tron"] .page,
+
+    html[data-theme="bladerunner"] .page {
       max-width: none;
       margin: 0;
       padding: 0;
@@ -123,17 +133,22 @@
       max-width: none;
     }
 
-    html[data-theme="tron"] .ascii {
+    html[data-theme="tron"] .ascii,
+
+    html[data-theme="bladerunner"] .ascii {
       color: #8ff5ff;
       text-shadow: 0 0 14px rgba(0, 229, 255, 0.55), 0 0 28px rgba(0, 229, 255, 0.22);
     }
 
     /* Tron header: Orbitron wordmark replaces the ASCII art */
-    html[data-theme="tron"] .ascii {
+    html[data-theme="tron"] .ascii,
+    html[data-theme="bladerunner"] .ascii {
       display: none;
     }
 
-    html[data-theme="tron"] .site-title {
+    html[data-theme="tron"] .site-title,
+
+    html[data-theme="bladerunner"] .site-title {
       position: static;
       width: auto;
       height: auto;
@@ -143,7 +158,7 @@
       white-space: normal;
       font-family: "Tr2n", "Orbitron", ui-sans-serif, sans-serif;
       font-weight: normal;
-      font-size: clamp(28px, 7vw, 64px);
+      font-size: clamp(28px, 9.5vw, 112px);
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: #8ff5ff;
@@ -194,7 +209,9 @@
       pointer-events: none;
     }
 
-    html[data-theme="tron"] .gameboy {
+    html[data-theme="tron"] .gameboy,
+
+    html[data-theme="bladerunner"] .gameboy {
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -205,7 +222,9 @@
       box-shadow: none;
     }
 
-    html[data-theme="tron"] .gameboy::before {
+    html[data-theme="tron"] .gameboy::before,
+
+    html[data-theme="bladerunner"] .gameboy::before {
       content: none;
     }
 
@@ -224,7 +243,9 @@
       opacity: 0.85;
     }
 
-    html[data-theme="tron"] .gb-brand {
+    html[data-theme="tron"] .gb-brand,
+
+    html[data-theme="bladerunner"] .gb-brand {
       display: none;
     }
 
@@ -281,7 +302,9 @@
         0 0 0 1px rgba(0, 0, 0, 0.25);
     }
 
-    html[data-theme="tron"] .screen-stack {
+    html[data-theme="tron"] .screen-stack,
+
+    html[data-theme="bladerunner"] .screen-stack {
       background: none;
       border-radius: 0;
       padding: 0;
@@ -292,7 +315,9 @@
       flex: 1;
     }
 
-    html[data-theme="tron"] .matrix-label {
+    html[data-theme="tron"] .matrix-label,
+
+    html[data-theme="bladerunner"] .matrix-label {
       display: none;
     }
 
@@ -304,7 +329,9 @@
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
     }
 
-    html[data-theme="tron"] .lcd-wrap {
+    html[data-theme="tron"] .lcd-wrap,
+
+    html[data-theme="bladerunner"] .lcd-wrap {
       background: none;
       padding: 0;
       box-shadow: none;
@@ -326,7 +353,9 @@
       box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.55);
     }
 
-    html[data-theme="tron"] .lcd {
+    html[data-theme="tron"] .lcd,
+
+    html[data-theme="bladerunner"] .lcd {
       background: none;
       flex: 1;
       min-height: 60vh;
@@ -353,7 +382,9 @@
       opacity: 0.45;
     }
 
-    html[data-theme="tron"] .lcd::after {
+    html[data-theme="tron"] .lcd::after,
+
+    html[data-theme="bladerunner"] .lcd::after {
       display: none;
     }
 
@@ -380,7 +411,9 @@
       display: none;
     }
 
-    html[data-theme="tron"] .input-cursor {
+    html[data-theme="tron"] .input-cursor,
+
+    html[data-theme="bladerunner"] .input-cursor {
       display: inline-block;
       width: 0.55em;
       height: 1.1em;
@@ -390,7 +423,9 @@
       flex: 0 0 auto;
     }
 
-    html[data-theme="tron"] .input-row.responding .input-cursor {
+    html[data-theme="tron"] .input-row.responding .input-cursor,
+
+    html[data-theme="bladerunner"] .input-row.responding .input-cursor {
       visibility: hidden;
     }
 
@@ -408,7 +443,9 @@
       gap: 0.75rem;
     }
 
-    html[data-theme="tron"] .controls-deck {
+    html[data-theme="tron"] .controls-deck,
+
+    html[data-theme="bladerunner"] .controls-deck {
       display: none;
     }
 
@@ -437,14 +474,18 @@
       gap: 0.5rem;
     }
 
-    html[data-theme="tron"] .input-row {
+    html[data-theme="tron"] .input-row,
+
+    html[data-theme="bladerunner"] .input-row {
       flex-wrap: nowrap;
       align-items: center;
       gap: 0.4rem;
       margin-top: calc(22px * 1.25); /* one blank line, matching the \n\n transcript separator */
     }
 
-    html[data-theme="tron"] .lcd-pre:empty + .input-row {
+    html[data-theme="tron"] .lcd-pre:empty + .input-row,
+
+    html[data-theme="bladerunner"] .lcd-pre:empty + .input-row {
       margin-top: 0;
     }
 
@@ -455,7 +496,9 @@
       color: #2f3428;
     }
 
-    html[data-theme="tron"] .input-row label {
+    html[data-theme="tron"] .input-row label,
+
+    html[data-theme="bladerunner"] .input-row label {
       position: absolute;
       width: 1px;
       height: 1px;
@@ -471,7 +514,9 @@
       display: none;
     }
 
-    html[data-theme="tron"] .prompt-glyph {
+    html[data-theme="tron"] .prompt-glyph,
+
+    html[data-theme="bladerunner"] .prompt-glyph {
       display: block;
       font-family: "VT323", ui-monospace, monospace;
       font-size: 22px;
@@ -514,7 +559,9 @@
       outline-offset: 2px;
     }
 
-    html[data-theme="tron"] .input-row input {
+    html[data-theme="tron"] .input-row input,
+
+    html[data-theme="bladerunner"] .input-row input {
       border: none;
       border-radius: 0;
       background: none;
@@ -526,16 +573,22 @@
       line-height: 1.25;
     }
 
-    html[data-theme="tron"] .input-row input::placeholder {
+    html[data-theme="tron"] .input-row input::placeholder,
+
+    html[data-theme="bladerunner"] .input-row input::placeholder {
       color: #2a5a66;
     }
 
-    html[data-theme="tron"] .input-row input:focus {
+    html[data-theme="tron"] .input-row input:focus,
+
+    html[data-theme="bladerunner"] .input-row input:focus {
       outline: none;
       box-shadow: none;
     }
 
-    html[data-theme="tron"] .input-mirror {
+    html[data-theme="tron"] .input-mirror,
+
+    html[data-theme="bladerunner"] .input-mirror {
       display: flex;
       align-items: center;
       position: absolute;
@@ -577,7 +630,9 @@
       cursor: not-allowed;
     }
 
-    html[data-theme="tron"] .btn-send {
+    html[data-theme="tron"] .btn-send,
+
+    html[data-theme="bladerunner"] .btn-send {
       border-radius: 0;
       border: none;
       color: #7cf9ff;
@@ -590,16 +645,22 @@
       padding-bottom: 0;
     }
 
-    html[data-theme="tron"] .btn-send:active {
+    html[data-theme="tron"] .btn-send:active,
+
+    html[data-theme="bladerunner"] .btn-send:active {
       transform: none;
       color: #fff;
     }
 
-    html[data-theme="tron"] .btn-send::before {
+    html[data-theme="tron"] .btn-send::before,
+
+    html[data-theme="bladerunner"] .btn-send::before {
       content: "[ ";
     }
 
-    html[data-theme="tron"] .btn-send::after {
+    html[data-theme="tron"] .btn-send::after,
+
+    html[data-theme="bladerunner"] .btn-send::after {
       content: " ]";
     }
 
@@ -675,7 +736,9 @@
       letter-spacing: 0.03em;
     }
 
-    html[data-theme="tron"] .hint {
+    html[data-theme="tron"] .hint,
+
+    html[data-theme="bladerunner"] .hint {
       color: #4fd8e8;
       display: block;
       min-height: 2.8em;
@@ -688,155 +751,49 @@
       color: #6a7560;
     }
 
-    html[data-theme="tron"] footer {
+    html[data-theme="tron"] footer,
+
+    html[data-theme="bladerunner"] footer {
       color: #3fa8b8;
     }
 
-    /* —— Blade Runner theme: Game Boy layout re-skinned as an amber CRT console in the rain —— */
+    /* —— Blade Runner: Tron terminal layout, orange palette —— */
     html[data-theme="bladerunner"] {
-      --page-bg: #05070a;
-      --shell-a: #1b2026;
-      --shell-b: #0c0f13;
-      --shell-edge: #2a3a40;
-      --bezel: #040506;
-      --lcd-dark: #0a0603;
-      --lcd-pixel: #ffb347;
-      --lcd-glow: rgba(255, 140, 40, 0.5);
-      --ink: #f3d6b0;
+      --page-bg: #000;
+      --lcd-pixel: #ffa64d;
+      --lcd-glow: rgba(255, 140, 30, 0.45);
+      --ink: #ffe0bf;
     }
 
-    html[data-theme="bladerunner"] body {
-      background-color: var(--page-bg);
-      background-image:
-        radial-gradient(ellipse 70% 40% at 15% 0%, rgba(0, 200, 190, 0.12), transparent),
-        radial-gradient(ellipse 60% 40% at 90% 10%, rgba(255, 110, 30, 0.12), transparent);
+    html[data-theme="bladerunner"] .site-title {
+      font-family: "BladeRunner", "Tr2n", ui-sans-serif, sans-serif;
+      letter-spacing: 0.06em;
+      color: #ffb05c;
+      text-shadow: 0 0 14px rgba(255, 140, 30, 0.55), 0 0 28px rgba(255, 140, 30, 0.22);
     }
 
-    html[data-theme="bladerunner"] body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background-image: repeating-linear-gradient(
-        100deg,
-        transparent 0 22px,
-        rgba(160, 200, 220, 0.07) 22px 23px
-      );
-      background-size: 100% 120px;
-      animation: br-rain 0.6s linear infinite;
+    html[data-theme="bladerunner"] .input-cursor {
+      background: #ffa64d;
+      box-shadow: 0 0 6px rgba(255, 140, 30, 0.8);
     }
 
-    @keyframes br-rain {
-      from { background-position: 0 0; }
-      to { background-position: -20px 120px; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      html[data-theme="bladerunner"] body::before {
-        animation: none;
-      }
-    }
-
-    html[data-theme="bladerunner"] .ascii-stage,
-    html[data-theme="bladerunner"] .page {
-      position: relative;
-    }
-
-    html[data-theme="bladerunner"] .ascii {
-      color: #ffb347;
-      text-shadow: 0 0 12px rgba(255, 140, 40, 0.55), 0 0 30px rgba(0, 200, 190, 0.2);
-    }
-
-    html[data-theme="bladerunner"] .gameboy {
-      background: linear-gradient(165deg, var(--shell-a) 0%, var(--shell-b) 100%);
-      border-radius: 4px;
-      border: 1px solid var(--shell-edge);
-      box-shadow:
-        0 0 0 1px rgba(0, 200, 190, 0.15),
-        0 0 40px rgba(0, 200, 190, 0.12),
-        0 18px 40px rgba(0, 0, 0, 0.6);
-    }
-
-    html[data-theme="bladerunner"] .gameboy::before {
-      content: none;
-    }
-
-    html[data-theme="bladerunner"] .gb-brand {
-      font-size: 0;
-    }
-
-    html[data-theme="bladerunner"] .gb-brand span {
-      display: none;
-    }
-
-    html[data-theme="bladerunner"] .gb-brand::before {
-      content: "Esper · Voight-Kampff terminal";
-      font-family: "Orbitron", ui-sans-serif, sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.3em;
-      color: #5fd6cc;
-    }
-
-    html[data-theme="bladerunner"] .matrix-label,
-    html[data-theme="bladerunner"] .power {
-      color: #5fd6cc;
-    }
-
-    html[data-theme="bladerunner"] .led.on {
-      background: #ff8c1a;
-      box-shadow: 0 0 8px rgba(255, 140, 26, 0.9), 0 0 0 1px rgba(0, 0, 0, 0.25);
-    }
-
-    html[data-theme="bladerunner"] .lcd-wrap {
-      background: #0b0d10;
-    }
-
-    html[data-theme="bladerunner"] .controls-deck {
-      display: none;
-    }
-
-    html[data-theme="bladerunner"] .input-row label {
-      color: #5fd6cc;
-    }
-
-    html[data-theme="bladerunner"] .input-row input {
-      border: 1px solid rgba(255, 179, 71, 0.4);
-      background: #0b0d10;
-      color: #ffb347;
-      box-shadow: none;
+    html[data-theme="bladerunner"] .prompt-glyph,
+    html[data-theme="bladerunner"] .input-mirror,
+    html[data-theme="bladerunner"] .btn-send {
+      color: #ffa64d;
+      text-shadow: 0 0 6px rgba(255, 140, 30, 0.8);
     }
 
     html[data-theme="bladerunner"] .input-row input::placeholder {
-      color: #7a5a3a;
-    }
-
-    html[data-theme="bladerunner"] .input-row input:focus {
-      outline: 1px solid #5fd6cc;
-    }
-
-    html[data-theme="bladerunner"] .btn-send {
-      border-radius: 2px;
-      border: 1px solid #ffb347;
-      background: transparent;
-      color: #ffb347;
-      font-family: "Orbitron", ui-sans-serif, sans-serif;
-      font-size: 13px;
-      text-shadow: 0 0 6px rgba(255, 140, 40, 0.7);
-      box-shadow: 0 0 10px rgba(255, 140, 40, 0.25);
-    }
-
-    html[data-theme="bladerunner"] .btn-send:active {
-      transform: none;
-      background: rgba(255, 179, 71, 0.15);
-      box-shadow: 0 0 10px rgba(255, 140, 40, 0.25);
+      color: #6a4220;
     }
 
     html[data-theme="bladerunner"] .hint {
-      color: #7fbfb8;
+      color: #e8954f;
     }
 
     html[data-theme="bladerunner"] footer {
-      color: #6a7a80;
+      color: #b8743f;
     }
 
     /* —— Menu bar (classic DOS text-mode style, same in both themes) —— */
@@ -1195,7 +1152,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       function go() {
         var text = (q.value || "").trim();
-        var tron = currentTheme() === "tron";
+        var tron = isTerminal(currentTheme());
         var sep = transcript ? "\n\n" : "";
 
         if (!text) {
@@ -1268,6 +1225,10 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       var THEME_KEY = "davemost-theme";
 
+      function isTerminal(t) {
+        return t === "tron" || t === "bladerunner";
+      }
+
       function currentTheme() {
         return document.documentElement.getAttribute("data-theme") || "tron";
       }
@@ -1287,7 +1248,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       var inputAnchor = document.getElementById("input-anchor");
 
       function placeInputRow(name) {
-        if (name === "tron") {
+        if (isTerminal(name)) {
           lcdScreen.appendChild(inputRow);
           q.focus({ preventScroll: true });
         } else {
@@ -1306,7 +1267,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
 
       syncThemeMenu();
       placeInputRow(currentTheme());
-      if (currentTheme() === "tron") {
+      if (isTerminal(currentTheme())) {
         transcript = TRON_START;
         setLcd(transcript);
       }
@@ -1340,7 +1301,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
       });
 
       document.addEventListener("click", function () {
-        if (currentTheme() === "tron" && !q.disabled) q.focus({ preventScroll: true });
+        if (isTerminal(currentTheme()) && !q.disabled) q.focus({ preventScroll: true });
       });
 
       document.querySelectorAll(".menu-dropdown button[data-action]").forEach(function (btn) {
@@ -1351,7 +1312,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           if (action === "new-session") {
             cancelTypewriter();
             lastExchange = null;
-            transcript = currentTheme() === "tron" ? TRON_START : GREETING;
+            transcript = isTerminal(currentTheme()) ? TRON_START : GREETING;
             setLcd(transcript);
             setStatus("Ask something and press Send (or Enter).");
             q.value = "";
