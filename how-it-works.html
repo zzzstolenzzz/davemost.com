@@ -376,7 +376,7 @@
         <div class="svg-scroll">
           <svg class="diagram-svg" viewBox="0 0 1000 600" width="1000" height="600" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diagramTitle diagramDesc">
             <title id="diagramTitle">davemost.com architecture diagram</title>
-            <desc id="diagramDesc">Request flow: the visitor browser calls a Cloudflare Worker. The Worker calls Google Gemini 2.5 Flash, reads stored facts from Workers KV, and uses API keys held as Worker secrets. Teaching loop: Dave's phone sends a Telegram message to the same Worker's webhook route, which writes a fact to Workers KV; those facts flow back into the system prompt.</desc>
+            <desc id="diagramDesc">Request flow: the visitor browser calls a Cloudflare Worker. The Worker calls Google Gemini 2.5 Flash, and reads stored facts from Workers KV. Teaching loop: Dave's phone sends a Telegram message to the same Worker's webhook route, which writes a fact to Workers KV; those facts flow back into the system prompt.</desc>
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
                 <path d="M0,0 L10,5 L0,10 z" class="arrowhead"></path>
@@ -414,8 +414,6 @@
             <path class="edge" d="M665,120 L665,190" marker-end="url(#arrow)"></path>
             <text class="edge-label" x="655" y="158" text-anchor="end">read facts</text>
 
-            <path class="edge" d="M735,120 L885,190" marker-end="url(#arrow)"></path>
-            <text class="edge-label" x="810" y="148" text-anchor="middle">get key</text>
 
             <path class="edge accent" d="M715,190 L715,120" marker-end="url(#arrow-accent)"></path>
             <text class="edge-label" x="725" y="158" text-anchor="start">facts → prompt</text>
@@ -430,12 +428,6 @@
               <rect x="595" y="190" width="180" height="90" rx="8"></rect>
               <text class="title" x="685" y="230" text-anchor="middle">Workers KV</text>
               <text class="sub" x="685" y="252" text-anchor="middle">stored facts</text>
-            </g>
-
-            <g class="node">
-              <rect x="795" y="190" width="180" height="90" rx="8"></rect>
-              <text class="title" x="885" y="230" text-anchor="middle">Worker Secrets</text>
-              <text class="sub" x="885" y="252" text-anchor="middle">API keys</text>
             </g>
 
             <!-- Row 3: teaching loop -->
