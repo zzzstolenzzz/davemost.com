@@ -298,19 +298,6 @@
       text-shadow: 0 0 6px var(--lcd-glow);
     }
 
-    .guardrail-list {
-      margin: 0 0 1rem;
-      padding-left: 1.4rem;
-    }
-
-    .guardrail-list li {
-      margin-bottom: 0.5rem;
-    }
-
-    .guardrail-list strong {
-      color: var(--lcd-pixel);
-    }
-
     footer {
       text-align: center;
       margin-top: 1rem;
@@ -469,19 +456,6 @@
           <li>GitHub Pages</li>
           <li>vanilla JS/CSS (no framework)</li>
         </ul>
-      </section>
-
-      <section class="panel">
-        <h2>How the Agent Stays On-Topic — and Safe</h2>
-        <p>The agent has one job: answer questions about me — my work, my projects, how I think. Ask it to write your homework or debug your Python and it declines. That boundary is enforced server-side, not just suggested in a prompt.</p>
-        <p>I treat this like a security surface, not a chatbot demo. I threat-modeled it myself and hardened the paths an attacker would actually try:</p>
-        <ul class="guardrail-list">
-          <li><strong>Sanitized conversation history</strong> — the client sends prior turns for context, so that history is treated as untrusted input and cleaned before it reaches the model. That closes the obvious jailbreak: forging a fake assistant turn that pretends the guardrail already gave permission.</li>
-          <li><strong>Message length caps</strong> — input length is capped so nobody can turn my API bill into a denial-of-wallet attack.</li>
-          <li><strong>Cheap pre-filter</strong> — obvious off-topic requests like bare arithmetic are rejected before they ever reach the model, so they cost nothing.</li>
-          <li><strong>Locked-down teaching channel</strong> — the Telegram webhook that lets me add new facts checks a shared secret token on every request and only accepts commands from my own Telegram user ID. If either is missing, it fails closed.</li>
-        </ul>
-        <p>I attack my own systems before anyone else gets the chance.</p>
       </section>
 
       <section class="panel">
