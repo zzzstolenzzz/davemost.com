@@ -8,6 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Doodle Chess">
 </head>
 <body>
   <!-- Inked wobble filter, applied to every piece drawing -->
@@ -52,9 +56,19 @@
     <button id="signin" type="button" class="quiet">Player sign-in</button>
     <button id="signout" type="button" class="quiet" hidden>Sign out</button>
     <button id="undo" type="button" hidden disabled>Undo</button>
+    <button id="alerts" type="button" hidden>🔔 Alerts</button>
     <button id="new-game" type="button" hidden>New game</button>
     <a href="/" class="home">← davemost.com</a>
   </footer>
+
+  <div id="alerts-help" hidden>
+    <div class="note">
+      <h2>Move alerts</h2>
+      <p>To get move alerts on iPad/iPhone:</p>
+      <p>1) tap the Share button, 2) Add to Home Screen, 3) open Doodle Chess from your home screen and tap 🔔 Alerts again.</p>
+      <button type="button" id="alerts-ok">Got it</button>
+    </div>
+  </div>
 
   <div id="offline" hidden>offline – reconnecting</div>
 

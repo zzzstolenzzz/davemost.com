@@ -11,6 +11,8 @@ const PIECE_FILES = {
 };
 const PEN = "#2a3350";
 const CHESS_MOVE_URL = "https://davemost.davemost.workers.dev/chess-move";
+const CHESS_SUBSCRIBE_URL = "https://davemost.davemost.workers.dev/chess-subscribe";
+const VAPID_PUBLIC = "BIii2uZwe9GuDRfbcUsFKmcXkDY36fV1PKMqxbzmn3InwAxnBeX9_nUXM-VQ3GPr6iorI0cwCTihAjuh7H2s5Fs"; // public key, not a secret
 const $ = (id) => document.getElementById(id);
 const opp = (c) => (c === "w" ? "b" : "w");
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -524,7 +526,7 @@ function makeMove(from, to, promotion) {
     return { fen: toFen, last: packMove(m), moveCount: cur.moveCount + 1, prevFen: fromFen, prevLast: cur.last ?? null, updated: serverTimestamp() };
   }).then((res) => {
     if (!res.committed) fullRender(res.snapshot.val());
-    else if (mySide === "b") fetch(CHESS_MOVE_URL, { method: "POST" }).catch(() => {});
+    else fetch(CHESS_MOVE_URL, { method: "POST" }).catch(() => {});
   }).catch((err) => {
     if (/permission_denied/i.test(`${err.code} ${err.message}`)) {
       fullRender(serverVal);
@@ -597,6 +599,43 @@ function newGame() {
   runTransaction(gameRef, () => initialState()).catch(() => {});
 }
 
+// ---------- move alerts (Web Push) ----------
+
+const swReady = "serviceWorker" in navigator ? navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready).catch(() => null) : Promise.resolve(null);
+
+async function refreshAlerts() {
+  let on = false;
+  try { on = !!(await (await swReady)?.pushManager.getSubscription()); } catch { /* label stays off */ }
+  $("alerts").textContent = on ? "🔔 On" : "🔔 Alerts";
+}
+
+async function enableAlerts() {
+  const standalone = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+  if (!("PushManager" in window) || !standalone && /iPad|iPhone|iPod/.test(navigator.userAgent) || !("Notification" in window)) {
+    $("alerts-help").hidden = false;
+    return;
+  }
+  const perm = await Notification.requestPermission(); // first await: must stay inside the tap for iOS
+  if (perm !== "granted") {
+    if (perm === "denied") $("status").textContent = "Notifications are blocked — allow them in Settings.";
+    return;
+  }
+  try {
+    const reg = await swReady;
+    const key = Uint8Array.from(atob(VAPID_PUBLIC.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    const res = await fetch(CHESS_SUBSCRIBE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken: await user.getIdToken(), subscription: sub.toJSON() }),
+    });
+    if (!res.ok) throw new Error(res.status);
+    $("alerts").textContent = "🔔 On";
+  } catch {
+    $("status").textContent = "Couldn't turn on alerts.";
+  }
+}
+
 // ---------- screens and sign-in ----------
 
 function show(screen) {
@@ -610,6 +649,8 @@ function renderAuthUi() {
   $("signout").hidden = !user;
   $("new-game").hidden = !mySide;
   $("undo").hidden = !mySide;
+  $("alerts").hidden = !mySide;
+  if (mySide) refreshAlerts();
   refreshUndo();
   $("watching").hidden = !!mySide;
   $("spectator").hidden = !user || !!mySide;
@@ -682,6 +723,8 @@ function wireUi() {
   });
   $("new-game").addEventListener("click", newGame);
   $("undo").addEventListener("click", undo);
+  $("alerts").addEventListener("click", enableAlerts);
+  $("alerts-ok").addEventListener("click", () => { $("alerts-help").hidden = true; });
   $("promo").addEventListener("click", (e) => { if (e.target === $("promo")) $("promo").hidden = true; });
   $("splat").addEventListener("click", (e) => {
     if (e.target.id === "splat-new") newGame();
