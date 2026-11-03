@@ -617,7 +617,9 @@ function wireUi() {
   document.addEventListener("pointerdown", unlockAudio);
   $("mute").addEventListener("click", () => setMuted(!muted));
   $("signin").addEventListener("click", () => {
-    signInWithPopup(auth, new GoogleAuthProvider()).catch((err) => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    signInWithPopup(auth, provider).catch((err) => {
       if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
         $("status").textContent = `Couldn't sign in: ${err.message}`;
       }
