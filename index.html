@@ -1148,6 +1148,30 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         setStatus(on ? "Thinking..." : "Ask something and press Send (or Enter).");
       }
 
+      function showNotice(prefix, tron, errText) {
+        if (tron) transcript = prefix + errText;
+        setLoading(false);
+        q.value = "";
+        syncMirror();
+        stopThinking();
+        typewrite(prefix, errText, function () {
+          inputRow.classList.remove("responding");
+          q.focus();
+        });
+      }
+
+      var CHAT_LIMIT = 30;
+      var chatCountMem = 0;
+
+      function chatCount() {
+        try { return parseInt(sessionStorage.getItem("dm_chat_count"), 10) || 0; } catch (e) { return chatCountMem; }
+      }
+
+      function bumpChatCount() {
+        chatCountMem = chatCount() + 1;
+        try { sessionStorage.setItem("dm_chat_count", String(chatCountMem)); } catch (e) { }
+      }
+
       function go() {
         var text = (q.value || "").trim();
         var tron = isTerminal(currentTheme());
@@ -1164,6 +1188,11 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
         var prefix = tron
           ? transcript + sep + "> " + text + "\n"
           : "davemost.com\n────────────\n> " + text + "\n\n";
+        if (chatCount() >= CHAT_LIMIT) {
+          showNotice(prefix, tron, "[LIMIT]\nThat's 30 questions for this visit.\nCome back later!");
+          return;
+        }
+        bumpChatCount();
         startThinking(prefix);
         if (tron) {
           inputRow.classList.add("responding");
@@ -1203,16 +1232,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
             });
           })
           .catch(function () {
-            var errText = "[ERROR]\nCould not reach agent.\nTry again.";
-            if (tron) transcript = prefix + errText;
-            setLoading(false);
-            q.value = "";
-            syncMirror();
-            stopThinking();
-            typewrite(prefix, errText, function () {
-              inputRow.classList.remove("responding");
-              q.focus();
-            });
+            showNotice(prefix, tron, "[ERROR]\nCould not reach agent.\nTry again.");
           });
       }
 
