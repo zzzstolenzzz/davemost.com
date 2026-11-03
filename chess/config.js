@@ -12,4 +12,4 @@ export const firebaseConfig = {
 
 // The two players. w = white (blue ink, moves first), b = black (red ink).
 // Names are shown in the game. The same two UIDs must ALSO be pasted into database.rules.json.
-export const PLAYERS = { w: { name: "Dad", uid: "CRG0lLi3cTUkKFSOcfGEtNBRHbh2" }, b: { name: "Kiddo", uid: "PASTE_HER_UID" } };
+export const PLAYERS = { w: { name: "Dad", uid: "CRG0lLi3cTUkKFSOcfGEtNBRHbh2" }, b: { name: "Kiddo", uid: "Q07t4Utravf5VKV2PcsWiRLpFIM2" } };
