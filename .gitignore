@@ -1,0 +1,5 @@
+node_modules/
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/dist/

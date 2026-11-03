@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Raven perched on a stone tower -->
+  <path d="M30 62 L30 96 L70 96 L70 62 Z" fill="#fffef8"/>
+  <path d="M28 62 L28 54 L37 54 L37 58 L44 58 L44 54 L56 54 L56 58 L63 58 L63 54 L72 54 L72 62 Z" fill="#fffef8"/>
+  <path d="M44 96 L44 83 Q50 75 56 83 L56 96"/>
+  <path d="M30 72 L38 72 M62 72 L70 72 M30 88 L38 88 M62 88 L70 88"/>
+  <path d="M64 42 L86 52 L62 52 Z" fill="#fffef8"/><path d="M64 42 L86 52 L62 52 Z" fill="currentColor" fill-opacity=".25"/>
+  <ellipse cx="50" cy="40" rx="17" ry="14" fill="#fffef8"/><ellipse cx="50" cy="40" rx="17" ry="14" fill="currentColor" fill-opacity=".25"/>
+  <circle cx="40" cy="24" r="10" fill="#fffef8"/><circle cx="40" cy="24" r="10" fill="currentColor" fill-opacity=".25"/>
+  <path d="M32 19 L14 26 L32 31 Z" fill="#fffef8"/><path d="M32 19 L14 26 L32 31 Z" fill="currentColor" fill-opacity=".25"/>
+  <path d="M36 32 L33 40 L39 37 L37 46 L44 39"/>
+  <g class="eyes"><circle cx="39" cy="22" r="2" fill="currentColor" stroke="none"/></g>
+  <path d="M45 54 L45 58 M55 54 L55 58"/>
+</svg>

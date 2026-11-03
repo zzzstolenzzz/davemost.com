@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Owl with tiara -->
+  <path d="M27 38 L23 19 L41 32 Z" fill="#fffef8"/><path d="M73 38 L77 19 L59 32 Z" fill="#fffef8"/>
+  <path d="M24 60 Q22 94 50 94 Q78 94 76 60 Q76 30 50 30 Q24 30 24 60 Z" fill="#fffef8"/>
+  <path d="M38 31 L40 19 L45 26 L50 14 L55 26 L60 19 L62 31" fill="#fffef8"/>
+  <circle cx="38" cy="47" r="11" fill="#fffef8"/><circle cx="62" cy="47" r="11" fill="#fffef8"/>
+  <g class="eyes"><circle cx="38" cy="48" r="4.5" fill="currentColor" stroke="none"/><circle cx="62" cy="48" r="4.5" fill="currentColor" stroke="none"/></g>
+  <path d="M46 56 L54 56 L50 65 Z" fill="#fffef8"/>
+  <path d="M38 73 Q42 79 46 73 Q50 79 54 73 Q58 79 62 73"/>
+  <path d="M40 83 Q44 89 48 83 Q52 89 56 83 Q60 89 64 83"/>
+  <path d="M25 62 Q19 76 29 85 M75 62 Q81 76 71 85"/>
+  <path d="M42 94 L42 98 M46 94 L46 98 M54 94 L54 98 M58 94 L58 98"/>
+</svg>

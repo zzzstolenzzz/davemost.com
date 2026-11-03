@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Mouse (placeholder) -->
+  <path d="M72 92 Q94 94 90 74 Q88 66 94 62"/>
+  <circle cx="35" cy="41" r="10" fill="#fffef8"/><circle cx="65" cy="41" r="10" fill="#fffef8"/>
+  <circle cx="35" cy="41" r="4.5"/><circle cx="65" cy="41" r="4.5"/>
+  <ellipse cx="50" cy="78" rx="20" ry="17" fill="#fffef8"/>
+  <path d="M40 94 L40 98 M60 94 L60 98"/>
+  <ellipse cx="50" cy="54" rx="17" ry="15" fill="#fffef8"/>
+  <g class="eyes"><circle cx="43" cy="52" r="1.9" fill="currentColor" stroke="none"/><circle cx="57" cy="52" r="1.9" fill="currentColor" stroke="none"/></g>
+  <circle cx="50" cy="60" r="2.5" fill="currentColor" stroke="none"/>
+  <path d="M40 60 L27 57 M40 63 L27 66 M60 60 L73 57 M60 63 L73 66 M46 64 Q50 67 54 64"/>
+</svg>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Fox with tiara (placeholder) -->
+  <path d="M70 92 Q98 90 92 60 Q90 50 82 62 Q80 78 66 80 Z" fill="#fffef8"/>
+  <path d="M32 96 Q30 72 50 70 Q70 72 68 96 Z" fill="#fffef8"/>
+  <path d="M26 44 L22 14 L42 30 Z" fill="#fffef8"/><path d="M74 44 L78 14 L58 30 Z" fill="#fffef8"/>
+  <path d="M28 36 L26 22 L36 30 M72 36 L74 22 L64 30"/>
+  <path d="M24 46 Q24 30 50 30 Q76 30 76 46 L85 54 L72 56 Q66 74 50 76 Q34 74 28 56 L15 54 Z" fill="#fffef8"/>
+  <path d="M40 31 L42 21 L46 27 L50 17 L54 27 L58 21 L60 31" fill="#fffef8"/>
+  <g class="eyes"><ellipse cx="40" cy="48" rx="2.3" ry="3.2" fill="currentColor" stroke="none"/><ellipse cx="60" cy="48" rx="2.3" ry="3.2" fill="currentColor" stroke="none"/></g>
+  <path d="M46 62 L54 62 L50 67 Z" fill="currentColor" stroke="none"/>
+  <path d="M50 67 Q46 72 42 70 M50 67 Q54 72 58 70"/>
+</svg>

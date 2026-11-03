@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Cat with crown (placeholder) -->
+  <path d="M68 90 Q95 90 89 62 Q87 54 80 58"/>
+  <path d="M30 96 Q28 70 50 68 Q72 70 70 96 Z" fill="#fffef8"/>
+  <path d="M42 96 L42 88 M58 96 L58 88"/>
+  <path d="M28 41 L25 20 L42 30 Z" fill="#fffef8"/><path d="M72 41 L75 20 L58 30 Z" fill="#fffef8"/>
+  <ellipse cx="50" cy="49" rx="24" ry="20" fill="#fffef8"/>
+  <path d="M38 32 L39 15 L45 23 L50 10 L55 23 L61 15 L62 32 Z" fill="#fffef8"/>
+  <g class="eyes"><ellipse cx="40" cy="49" rx="2.4" ry="3.4" fill="currentColor" stroke="none"/><ellipse cx="60" cy="49" rx="2.4" ry="3.4" fill="currentColor" stroke="none"/></g>
+  <path d="M47 55 L53 55 L50 59 Z" fill="currentColor" stroke="none"/>
+  <path d="M50 59 Q50 63 45 63 M50 59 Q50 63 55 63"/>
+  <path d="M33 56 L17 53 M33 60 L17 63 M67 56 L83 53 M67 60 L83 63"/>
+</svg>

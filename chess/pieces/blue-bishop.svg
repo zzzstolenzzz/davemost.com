@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Crow wearing a bishop mitre -->
+  <path d="M72 74 L93 88 L68 86 Z" fill="#fffef8"/><path d="M72 74 L93 88 L68 86 Z" fill="currentColor" fill-opacity=".25"/>
+  <path d="M50 88 L48 97 M60 88 L60 97 M44 97 L52 97 M55 97 L64 97"/>
+  <path d="M30 60 Q32 40 54 42 Q76 44 76 66 Q76 88 56 88 Q32 88 30 60 Z" fill="#fffef8"/>
+  <path d="M30 60 Q32 40 54 42 Q76 44 76 66 Q76 88 56 88 Q32 88 30 60 Z" fill="currentColor" fill-opacity=".25"/>
+  <path d="M46 62 Q60 58 68 72"/>
+  <circle cx="38" cy="38" r="12" fill="#fffef8"/><circle cx="38" cy="38" r="12" fill="currentColor" fill-opacity=".25"/>
+  <path d="M27 36 L10 41 L27 45 Z" fill="#fffef8"/><path d="M27 36 L10 41 L27 45 Z" fill="currentColor" fill-opacity=".25"/>
+  <g class="eyes"><circle cx="34" cy="36" r="2.2" fill="currentColor" stroke="none"/></g>
+  <path d="M26 29 L37 5 L49 29 Z" fill="#fffef8"/>
+  <path d="M28 24 L47 24"/>
+  <path d="M37 10 L37 20 M33 14 L41 14"/>
+</svg>

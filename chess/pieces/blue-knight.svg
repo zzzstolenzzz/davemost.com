@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Frog (knights jump, so do frogs) -->
+  <ellipse cx="50" cy="70" rx="26" ry="22" fill="#fffef8"/>
+  <path d="M40 80 L38 94 L28 94 M60 80 L62 94 L72 94"/>
+  <ellipse cx="24" cy="76" rx="13" ry="16" fill="#fffef8"/><ellipse cx="76" cy="76" rx="13" ry="16" fill="#fffef8"/>
+  <path d="M8 95 L36 95 M64 95 L92 95"/>
+  <path d="M20 52 Q20 34 50 34 Q80 34 80 52 Q80 62 50 62 Q20 62 20 52 Z" fill="#fffef8"/>
+  <circle cx="33" cy="32" r="11" fill="#fffef8"/><circle cx="67" cy="32" r="11" fill="#fffef8"/>
+  <g class="eyes"><circle cx="34" cy="33" r="4.5" fill="currentColor" stroke="none"/><circle cx="66" cy="33" r="4.5" fill="currentColor" stroke="none"/></g>
+  <circle cx="46" cy="45" r="1.2" fill="currentColor" stroke="none"/><circle cx="54" cy="45" r="1.2" fill="currentColor" stroke="none"/>
+  <path d="M26 51 Q50 68 74 51"/>
+</svg>

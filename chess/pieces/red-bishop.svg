@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Penguin wearing a mitre (placeholder) -->
+  <path d="M26 92 Q22 52 50 40 Q78 52 74 92 Q50 98 26 92 Z" fill="#fffef8"/>
+  <path d="M26 92 Q22 52 50 40 Q78 52 74 92 Q50 98 26 92 Z" fill="currentColor" fill-opacity=".25"/>
+  <path d="M36 90 Q34 62 50 52 Q66 62 64 90 Q50 94 36 90 Z" fill="#fffef8"/>
+  <path d="M26 62 Q14 74 22 84 M74 62 Q86 74 78 84"/>
+  <circle cx="50" cy="44" r="15" fill="#fffef8"/><circle cx="50" cy="44" r="15" fill="currentColor" fill-opacity=".25"/>
+  <path d="M44 48 L56 48 L50 56 Z" fill="#fffef8"/>
+  <g class="eyes"><circle cx="43" cy="41" r="2" fill="currentColor" stroke="none"/><circle cx="57" cy="41" r="2" fill="currentColor" stroke="none"/></g>
+  <path d="M36 32 L50 6 L64 32 Z" fill="#fffef8"/>
+  <path d="M39 27 L61 27 M50 14 L50 25 M45 19 L55 19"/>
+  <path d="M38 94 L28 98 L44 98 Z M62 94 L72 98 L56 98 Z" fill="#fffef8"/>
+</svg>

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doodle Chess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Inked wobble filter, applied to every piece drawing -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <header>
+    <h1>Doodle Chess</h1>
+    <button id="mute" type="button" aria-label="Sound on or off">🔊</button>
+  </header>
+
+  <main>
+    <section id="setup" class="note" hidden>
+      <h2>Almost there!</h2>
+      <p>Paste your Firebase config into <b>config.js</b>, then reload this page.</p>
+      <p>The steps are in README.md.</p>
+    </section>
+
+    <section id="play" hidden>
+      <p id="status" role="status"></p>
+      <p id="watching" class="tag" hidden>watching live</p>
+      <div id="spectator" class="tag" hidden>
+        <p>Signed in as a spectator.</p>
+        <p>Your ID: <code id="my-uid"></code> <button id="copy-uid" type="button">Copy ID</button></p>
+      </div>
+      <div id="board">
+        <div class="pieces"></div>
+        <div class="fx"></div>
+        <div id="splat" hidden></div>
+        <div id="promo" hidden></div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer" hidden>
+    <button id="signin" type="button" class="quiet">Player sign-in</button>
+    <button id="signout" type="button" class="quiet" hidden>Sign out</button>
+    <button id="new-game" type="button" hidden>New game</button>
+    <a href="/" class="home">← davemost.com</a>
+  </footer>
+
+  <div id="offline" hidden>offline – reconnecting</div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

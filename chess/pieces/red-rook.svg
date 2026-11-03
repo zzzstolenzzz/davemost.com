@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Snail whose shell is a castle tower (placeholder) -->
+  <path d="M10 94 Q6 94 8 88 Q10 80 18 70 L28 70 Q30 80 40 82 L88 82 Q96 84 94 90 Q92 94 86 94 Z" fill="#fffef8"/>
+  <path d="M44 82 L44 22 L53 22 L53 28 L60 28 L60 22 L69 22 L69 28 L76 28 L76 22 L86 22 L86 82 Z" fill="#fffef8"/>
+  <path d="M58 70 Q58 56 68 56 Q78 56 78 66 Q78 74 70 74 Q64 74 64 66"/>
+  <path d="M60 46 L60 38 Q65 33 70 38 L70 46 Z"/>
+  <path d="M15 70 Q10 58 12 48 M24 70 Q26 58 30 48"/>
+  <circle cx="12" cy="45" r="5" fill="#fffef8"/><circle cx="30" cy="45" r="5" fill="#fffef8"/>
+  <g class="eyes"><circle cx="12" cy="45" r="2" fill="currentColor" stroke="none"/><circle cx="30" cy="45" r="2" fill="currentColor" stroke="none"/></g>
+  <path d="M12 83 Q16 86 20 83"/>
+</svg>

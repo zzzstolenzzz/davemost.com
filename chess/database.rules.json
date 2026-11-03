@@ -1,0 +1,11 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "game": {
+      ".read": true,
+      ".write": "auth != null && newData.exists() && ((auth.uid === 'PASTE_DAD_UID' && (!data.exists() || data.child('fen').val().contains(' w ') || newData.child('moveCount').val() === 0)) || (auth.uid === 'PASTE_HER_UID' && (!data.exists() || data.child('fen').val().contains(' b ') || newData.child('moveCount').val() === 0)))",
+      ".validate": "newData.hasChildren(['fen','moveCount']) && newData.child('fen').isString() && newData.child('fen').val().length < 100 && (newData.child('moveCount').val() === 0 || newData.child('moveCount').val() === data.child('moveCount').val() + 1)"
+    }
+  }
+}

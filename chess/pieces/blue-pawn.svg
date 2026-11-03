@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Duckling -->
+  <ellipse cx="50" cy="76" rx="21" ry="17" fill="#fffef8"/>
+  <path d="M31 74 Q35 85 44 83"/>
+  <path d="M42 93 L42 98 M58 93 L58 98"/>
+  <circle cx="50" cy="50" r="14" fill="#fffef8"/>
+  <path d="M49 37 Q44 28 51 29 M52 37 Q57 29 60 33"/>
+  <ellipse cx="50" cy="56" rx="8" ry="3.8" fill="#fffef8"/>
+  <g class="eyes"><circle cx="44" cy="48" r="1.9" fill="currentColor" stroke="none"/><circle cx="56" cy="48" r="1.9" fill="currentColor" stroke="none"/></g>
+</svg>
