@@ -79,16 +79,34 @@ function wobblyCircle(cx, cy, r, rng) {
 let actx = null;
 let muted = store.get("dc-muted") === "1";
 
+const UNLOCK_EVENTS = ["pointerdown", "touchend", "click"];
+let primed = false;
+
 function unlockAudio() {
+  // iPhone: play through the silent (ringer) switch (Safari 16.4+).
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch {}
   if (!actx) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (AC) actx = new AC();
   }
-  if (actx && actx.state === "suspended") actx.resume();
+  if (!actx) return;
+  if (actx.state === "suspended") actx.resume();
+  if (!primed) {
+    // Classic iOS unlock: play one silent sample inside the gesture.
+    primed = true;
+    const src = actx.createBufferSource();
+    src.buffer = actx.createBuffer(1, 1, actx.sampleRate);
+    src.connect(actx.destination);
+    src.start(0);
+  }
+  if (actx.state === "running") {
+    UNLOCK_EVENTS.forEach((ev) => document.removeEventListener(ev, unlockAudio, true));
+  }
 }
 
 function tone({ type = "sine", from, to = from, dur = 0.1, vol = 0.25, delay = 0, lowpass = 0, vibrato = false }) {
   if (!actx || muted) return;
+  if (actx.state === "suspended") actx.resume();
   const t = actx.currentTime + delay;
   const osc = actx.createOscillator(), gain = actx.createGain();
   osc.type = type;
@@ -119,6 +137,7 @@ function tone({ type = "sine", from, to = from, dur = 0.1, vol = 0.25, delay = 0
 
 function noise(dur, vol, delay = 0) {
   if (!actx || muted) return;
+  if (actx.state === "suspended") actx.resume();
   const buf = actx.createBuffer(1, Math.ceil(actx.sampleRate * dur), actx.sampleRate);
   const data = buf.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -641,7 +660,7 @@ function fidget() {
 // ---------- start up ----------
 
 function wireUi() {
-  document.addEventListener("pointerdown", unlockAudio);
+  UNLOCK_EVENTS.forEach((ev) => document.addEventListener(ev, unlockAudio, true));
   $("mute").addEventListener("click", () => setMuted(!muted));
   $("signin").addEventListener("click", () => {
     const provider = new GoogleAuthProvider();
