@@ -193,7 +193,7 @@ const fxLayer = document.querySelector(".fx");
 const boardEl = $("board");
 let underG, overG;
 
-const initialState = () => ({ fen: new Chess().fen(), last: null, moveCount: 0, updated: serverTimestamp() });
+const initialState = () => ({ fen: new Chess().fen(), last: null, moveCount: 0, prevFen: null, prevLast: null, updated: serverTimestamp() });
 
 function packMove(m) {
   const out = { from: m.from, to: m.to, san: m.san, flags: m.flags, piece: m.piece, color: m.color };
@@ -502,7 +502,7 @@ function makeMove(from, to, promotion) {
   runTransaction(gameRef, (cur) => {
     if (cur === null) return null; // retry with the server's data
     if (cur.fen !== fromFen) return undefined; // someone else moved first: abort
-    return { fen: toFen, last: packMove(m), moveCount: cur.moveCount + 1, updated: serverTimestamp() };
+    return { fen: toFen, last: packMove(m), moveCount: cur.moveCount + 1, prevFen: fromFen, prevLast: cur.last ?? null, updated: serverTimestamp() };
   }).then((res) => {
     if (!res.committed) fullRender(res.snapshot.val());
     else if (mySide === "b") fetch(CHESS_MOVE_URL, { method: "POST" }).catch(() => {});
@@ -534,6 +534,7 @@ function fullRender(val) {
 function onSnapshot(val) {
   serverVal = val;
   exists = !!val;
+  refreshUndo();
   if (!val) { resetBoard(); reconcile(); refreshStatus(); return; }
   if (!synced) { synced = true; fullRender(val); return; }
   if (val.fen === game.fen()) { moveCount = val.moveCount; refreshStatus(); return; }
@@ -548,6 +549,28 @@ function onSnapshot(val) {
   } else {
     fullRender(val);
   }
+}
+
+function canUndo() {
+  return !!(mySide && serverVal && serverVal.last?.color === mySide && typeof serverVal.prevFen === "string");
+}
+
+function refreshUndo() {
+  $("undo").disabled = !canUndo();
+}
+
+// Take back my own last move, as long as the opponent hasn't replied. The snapshot drives the re-render.
+function undo() {
+  if (!canUndo()) return;
+  runTransaction(gameRef, (cur) => {
+    if (cur === null) return null; // retry with the server's data
+    if (cur.last?.color !== mySide || typeof cur.prevFen !== "string") return undefined; // too late: abort
+    return { fen: cur.prevFen, last: cur.prevLast ?? null, moveCount: cur.moveCount - 1, prevFen: null, prevLast: null, updated: serverTimestamp() };
+  }).then((res) => {
+    if (res.committed) sounds.plop();
+  }).catch((err) => {
+    if (/permission_denied/i.test(`${err.code} ${err.message}`)) $("status").textContent = "Couldn't undo that.";
+  });
 }
 
 function newGame() {
@@ -567,6 +590,8 @@ function renderAuthUi() {
   $("signin").hidden = !!user;
   $("signout").hidden = !user;
   $("new-game").hidden = !mySide;
+  $("undo").hidden = !mySide;
+  refreshUndo();
   $("watching").hidden = !!mySide;
   $("spectator").hidden = !user || !!mySide;
   $("my-uid").textContent = user ? user.uid : "";
@@ -637,6 +662,7 @@ function wireUi() {
     }
   });
   $("new-game").addEventListener("click", newGame);
+  $("undo").addEventListener("click", undo);
   $("promo").addEventListener("click", (e) => { if (e.target === $("promo")) $("promo").hidden = true; });
   $("splat").addEventListener("click", (e) => {
     if (e.target.id === "splat-new") newGame();
