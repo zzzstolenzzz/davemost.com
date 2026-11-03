@@ -10,6 +10,7 @@ const PIECE_FILES = {
   b: { k: "red-king", q: "red-queen", b: "red-bishop", n: "red-knight", r: "red-rook", p: "red-pawn" },
 };
 const PEN = "#2a3350";
+const CHESS_MOVE_URL = "https://davemost.davemost.workers.dev/chess-move";
 const $ = (id) => document.getElementById(id);
 const opp = (c) => (c === "w" ? "b" : "w");
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -504,6 +505,7 @@ function makeMove(from, to, promotion) {
     return { fen: toFen, last: packMove(m), moveCount: cur.moveCount + 1, updated: serverTimestamp() };
   }).then((res) => {
     if (!res.committed) fullRender(res.snapshot.val());
+    else if (mySide === "b") fetch(CHESS_MOVE_URL, { method: "POST" }).catch(() => {});
   }).catch((err) => {
     if (/permission_denied/i.test(`${err.code} ${err.message}`)) {
       fullRender(serverVal);
