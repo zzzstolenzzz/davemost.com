@@ -2,7 +2,7 @@
 // The apiKey being public is normal for Firebase web apps.
 export const firebaseConfig = {
   apiKey: "AIzaSyAMRpHwcRYyZJI4Ie1UptWKnNulNoaOL2M",
-  authDomain: "davemostdotcom.firebaseapp.com",
+  authDomain: "davemost.com",
   databaseURL: "https://davemostdotcom-default-rtdb.firebaseio.com",
   projectId: "davemostdotcom",
   storageBucket: "davemostdotcom.firebasestorage.app",
