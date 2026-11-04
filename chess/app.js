@@ -207,6 +207,7 @@ let db, auth, gameRef;
 let game = new Chess();
 let mySide = null, flipped = false, moveCount = 0, synced = false, exists = false, serverVal = null, user = null;
 let selected = null, targets = [], lastMove = null;
+let replaying = false, replayTimers = [];
 const pieceEls = new Map(); // square -> .piece element
 
 const piecesLayer = document.querySelector(".pieces");
@@ -477,6 +478,7 @@ function select(sq) {
 }
 
 function onSquare(sq) {
+  if (replaying) return;
   if (game.isGameOver() || game.turn() !== mySide) return;
   const hits = targets.filter((m) => m.to === sq);
   if (hits.length) {
@@ -556,6 +558,7 @@ function onSnapshot(val) {
   serverVal = val;
   exists = !!val;
   refreshUndo();
+  if (replaying) { stopReplay(); synced = false; } // a real update always wins: fall through to a full render
   if (!val) { resetBoard(); reconcile(); refreshStatus(); return; }
   if (!synced) { synced = true; fullRender(val); return; }
   if (val.fen === game.fen()) { moveCount = val.moveCount; refreshStatus(); return; }
@@ -578,11 +581,50 @@ function canUndo() {
 
 function refreshUndo() {
   $("undo").disabled = !canUndo();
+  $("replay").disabled = replaying || !(serverVal?.last && typeof serverVal.prevFen === "string");
+}
+
+function stopReplay() {
+  replayTimers.forEach(clearTimeout);
+  replayTimers = [];
+  replaying = false;
+  refreshUndo();
+}
+
+// Abort a replay and put the board back to the real position.
+function cancelReplay() {
+  if (!replaying) return;
+  stopReplay();
+  fullRender(serverVal);
+}
+
+// Re-animate the last move locally. Nothing is written to Firebase.
+function replay() {
+  if (replaying || $("replay").disabled) return;
+  const v = serverVal;
+  replaying = true;
+  selected = null;
+  targets = [];
+  refreshUndo();
+  game.load(v.prevFen);
+  lastMove = v.prevLast || null;
+  reconcile();
+  replayTimers.push(setTimeout(() => {
+    game.load(v.fen);
+    lastMove = v.last;
+    animateMove(v.last);
+    (v.last.captured ? sounds.bwaap : sounds.plop)();
+    replayTimers.push(setTimeout(() => {
+      stopReplay();
+      refreshStatus();
+    }, 450));
+  }, 450));
 }
 
 // Take back my own last move, as long as the opponent hasn't replied. The snapshot drives the re-render.
 function undo() {
   if (!canUndo()) return;
+  cancelReplay();
   runTransaction(gameRef, (cur) => {
     if (cur === null) return null; // retry with the server's data
     if (cur.last?.color !== mySide || typeof cur.prevFen !== "string") return undefined; // too late: abort
@@ -596,6 +638,7 @@ function undo() {
 
 function newGame() {
   if (!mySide || !confirm("Start a new game? The current one will be wiped.")) return;
+  cancelReplay();
   runTransaction(gameRef, () => initialState()).catch(() => {});
 }
 
@@ -723,6 +766,7 @@ function wireUi() {
   });
   $("new-game").addEventListener("click", newGame);
   $("undo").addEventListener("click", undo);
+  $("replay").addEventListener("click", replay);
   $("alerts").addEventListener("click", enableAlerts);
   $("alerts-ok").addEventListener("click", () => { $("alerts-help").hidden = true; });
   $("promo").addEventListener("click", (e) => { if (e.target === $("promo")) $("promo").hidden = true; });
