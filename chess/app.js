@@ -282,6 +282,53 @@ function buildBoard() {
   overG = over.querySelector("#over");
 }
 
+// ---------- captured-piece jails ----------
+
+const START_COUNTS = { q: 1, r: 2, b: 2, n: 2, p: 8 };
+let jailKey = "";
+
+// One jail per player, holding the opponent's pieces they have caught. Wobbly bars are drawn over the pieces.
+function buildJails() {
+  const rng = mulberry32(777);
+  let bars = "";
+  for (const x of [9, 27, 45, 63, 81, 97]) bars += wobblyLine(x, 2, x + (rng() - 0.5) * 2, 98, rng, 1.6);
+  for (const c of ["w", "b"]) {
+    const jail = document.createElement("div");
+    jail.className = "jail";
+    jail.id = `jail-${c}`;
+    jail.innerHTML = `<div class="jail-label"><span class="jail-sign">JAIL</span> ${PLAYERS[c].name}'s catches</div>
+      <div class="jail-cell"><div class="jail-pieces"></div>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${bars}" fill="none" stroke="${PEN}" stroke-width="2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></div>`;
+    $("jails").appendChild(jail);
+  }
+}
+
+// Captured = starting count minus what is on the board (never negative, so promotions are fine)
+function refreshJails() {
+  const have = { w: {}, b: {} };
+  for (const row of game.board()) for (const p of row) if (p) have[p.color][p.type] = (have[p.color][p.type] || 0) + 1;
+  const caught = { w: [], b: [] }; // keyed by the player who made the catches
+  for (const color of ["w", "b"]) {
+    for (const type of Object.keys(START_COUNTS)) {
+      const n = Math.max(0, START_COUNTS[type] - (have[color][type] || 0));
+      for (let i = 0; i < n; i++) caught[opp(color)].push(color + type);
+    }
+  }
+  const key = caught.w.join() + "|" + caught.b.join();
+  if (key === jailKey) return;
+  jailKey = key;
+  for (const c of ["w", "b"]) {
+    const box = $(`jail-${c}`).querySelector(".jail-pieces");
+    box.replaceChildren(...caught[c].map((k) => {
+      const el = document.createElement("div");
+      el.className = `jail-piece ${k[0]}`;
+      el.style.setProperty("--blink-delay", `-${(Math.random() * 5).toFixed(2)}s`);
+      el.appendChild(makePieceSvg(k[0], k[1]));
+      return el;
+    }));
+  }
+}
+
 // Yellow highlighter scribble filling one square
 function highlighter(sq, alpha) {
   const [col, row] = squareToCR(sq);
@@ -367,6 +414,7 @@ function reconcile() {
     place(el, sq);
   }
   refreshMarks();
+  refreshJails();
 }
 
 function slide(from, to) {
@@ -696,6 +744,7 @@ function renderAuthUi() {
   if (mySide) refreshAlerts();
   refreshUndo();
   $("watching").hidden = !!mySide;
+  $("about").hidden = !!mySide;
   $("spectator").hidden = !user || !!mySide;
   $("my-uid").textContent = user ? user.uid : "";
 }
@@ -788,6 +837,7 @@ function wireUi() {
 async function start() {
   wireUi();
   buildBoard();
+  buildJails();
   if (Object.values(firebaseConfig).some((v) => String(v).includes("PASTE_ME"))) {
     show("setup");
     return;
@@ -808,8 +858,12 @@ async function start() {
   show("play");
   $("status").textContent = "Loading…";
   onValue(gameRef, (snap) => onSnapshot(snap.val()));
-  auth = getAuth(app);
-  onAuthStateChanged(auth, applyAuth);
+  try {
+    auth = getAuth(app);
+    onAuthStateChanged(auth, applyAuth, () => { $("about").hidden = false; });
+  } catch {
+    $("about").hidden = false; // auth failed to start: everyone is a spectator
+  }
 }
 
 start();

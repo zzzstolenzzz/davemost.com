@@ -234,6 +234,50 @@ footer .quiet { border-style: dashed; }
 .tag p { margin: 2px 0; }
 .tag code { user-select: all; word-break: break-all; }
 
+/* Note for visitors (hidden for the two players) */
+.about {
+  width: 100%;
+  margin: 6px 0 2px;
+  padding: 8px 14px;
+  font-size: 18px;
+  line-height: 1.3;
+  text-align: center;
+  background: rgba(255, 244, 150, .55);
+  border: 2px solid var(--pen);
+  border-radius: 12px 8px 14px 9px / 9px 13px 8px 12px;
+  transform: rotate(-.6deg);
+}
+.about b { font-family: "Caveat", cursive; font-size: 24px; }
+
+/* Captured pieces sit in cute little jails under the board */
+#jails { display: flex; gap: 12px; width: min(100%, var(--size, 720px)); margin: 4px 0 2px; }
+.jail { flex: 1 1 0; min-width: 0; }
+.jail-label { font-size: 16px; line-height: 1.2; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jail-sign {
+  display: inline-block;
+  padding: 0 5px;
+  font-family: "Caveat", cursive;
+  font-size: 15px;
+  border: 1.5px solid var(--pen);
+  border-radius: 4px 3px 5px 3px;
+  background: rgba(255, 244, 150, .7);
+  transform: rotate(-4deg);
+}
+.jail-cell {
+  position: relative;
+  min-height: 62px;
+  padding: 3px 6px;
+  border: 2.5px solid var(--pen);
+  border-radius: 10px 6px 12px 7px / 7px 11px 6px 10px;
+  background: rgba(253, 251, 243, .85);
+}
+.jail-cell > svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.jail-pieces { display: flex; flex-wrap: wrap; gap: 0 2px; }
+.jail-piece { width: 30px; height: 30px; }
+.jail-piece.w { color: var(--ink-w); }
+.jail-piece.b { color: var(--ink-b); }
+.jail-piece svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
 #alerts-help {
   position: fixed;
   inset: 0;
