@@ -1,0 +1,83 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "game": {
+      ".read": true,
+      ".write": "auth != null && newData.exists() && ((auth.uid === 'CRG0lLi3cTUkKFSOcfGEtNBRHbh2' && (!data.exists() || data.child('fen').val().contains(' w ') || newData.child('moveCount').val() === 0 || (data.child('last/color').val() === 'w' && newData.child('moveCount').val() === data.child('moveCount').val() - 1 && newData.child('fen').val() === data.child('prevFen').val()))) || (auth.uid === 'Q07t4Utravf5VKV2PcsWiRLpFIM2' && (!data.exists() || data.child('fen').val().contains(' b ') || newData.child('moveCount').val() === 0 || (data.child('last/color').val() === 'b' && newData.child('moveCount').val() === data.child('moveCount').val() - 1 && newData.child('fen').val() === data.child('prevFen').val()))))",
+      ".validate": "newData.hasChildren(['fen','moveCount']) && newData.child('fen').isString() && newData.child('fen').val().length < 100 && (newData.child('moveCount').val() === 0 || newData.child('moveCount').val() === data.child('moveCount').val() + 1 || newData.child('moveCount').val() === data.child('moveCount').val() - 1)"
+    },
+    "cats": {
+      ".read": "auth != null && (auth.uid === 'CRG0lLi3cTUkKFSOcfGEtNBRHbh2' || auth.uid === 'Q07t4Utravf5VKV2PcsWiRLpFIM2')",
+      "players": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && (auth.uid === 'CRG0lLi3cTUkKFSOcfGEtNBRHbh2' || auth.uid === 'Q07t4Utravf5VKV2PcsWiRLpFIM2')",
+          ".validate": "newData.hasChildren(['cat', 'x', 'y', 'z', 'rotY', 'anim', 't'])",
+          "cat": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() > -400 && newData.val() < 400"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() > -50 && newData.val() < 200"
+          },
+          "z": {
+            ".validate": "newData.isNumber() && newData.val() > -400 && newData.val() < 400"
+          },
+          "rotY": {
+            ".validate": "newData.isNumber()"
+          },
+          "anim": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 100"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "equipped": {
+            "$slot": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "progress": {
+        "$uid": {
+          ".write": "auth != null && auth.uid === $uid && (auth.uid === 'CRG0lLi3cTUkKFSOcfGEtNBRHbh2' || auth.uid === 'Q07t4Utravf5VKV2PcsWiRLpFIM2')",
+          "cat": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "coins": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "fish": {
+            "$fid": {
+              ".validate": "$fid.matches(/^fish[0-9]{1,2}$/) && newData.val() === true"
+            }
+          },
+          "owned": {
+            "$item": {
+              ".validate": "$item.matches(/^[a-z0-9_]{1,40}$/) && newData.val() === true"
+            }
+          },
+          "equipped": {
+            "$slot": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            }
+          },
+          "upgrades": {
+            "$up": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}

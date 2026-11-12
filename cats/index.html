@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cat Adventure</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cat Adventure">
+<meta name="theme-color" content="#a9dcf7">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud" hidden>
+  <div class="pill ui" id="fishPill">🐟 <span id="fishCount">Fish 0/10</span></div>
+  <div class="pill ui" id="coinPill" hidden>🐾 <b id="coinCount">0</b></div>
+  <div id="radar" class="ui" hidden><div id="radarArrow">➤</div><span id="radarDist"></span></div>
+  <button id="shopBtn" class="round ui" aria-label="Shop">🛍️</button>
+  <button id="shopPrompt" class="prompt ui" hidden>🏠 Shop</button>
+  <div id="banner" class="ui"></div>
+  <div id="stick"><div id="knob"></div></div>
+  <button id="jump" class="ui">JUMP</button>
+</div>
+<button id="muteBtn" class="round ui" aria-label="Mute">🔊</button>
+<div id="shop" hidden></div>
+
+<section id="loading" class="screen">
+  <div class="paw"><i></i><i></i><i></i><i></i><b></b></div>
+  <p>Loading…</p>
+</section>
+
+<section id="locked" class="screen" hidden>
+  <div class="card-box">
+    <div class="big">🐱🔒</div>
+    <h1>This is a private game.</h1>
+    <p>Only invited players can come in.</p>
+    <p id="locked-note" class="note"></p>
+    <div id="uid-box" hidden>
+      <p>Send this code to Dad so he can let you in:</p>
+      <code id="my-uid"></code> <button id="copy-uid" class="small">Copy</button>
+    </div>
+    <button id="signin" class="main">Sign in with Google</button>
+    <button id="signout" class="small" hidden>Sign out</button>
+  </div>
+</section>
+
+<section id="start" class="screen" hidden>
+  <div class="card-box wide">
+    <h1>Cat Adventure</h1>
+    <p id="hello"></p>
+    <p>Pick your cat!</p>
+    <div id="cats"></div>
+    <button id="play" class="main">Play!</button>
+    <button id="signout-start" class="small">Not you? Sign out</button>
+  </div>
+</section>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
