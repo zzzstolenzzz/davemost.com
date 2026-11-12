@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { buildWorld } from "./world.js";
 import { buildCat, makeNameTag } from "./cat.js";
 import { createControls } from "./controls.js";
+import { createPerf } from "./perf.js";
+import { createPost } from "./post.js";
+import { createFX } from "./fx.js";
 import { createShop } from "./shopui.js";
 import * as sfx from "./audio.js";
 import { CATS } from "./config.js";
@@ -25,22 +28,78 @@ export async function startGame({ session, flags }) {
   if (flags.coins) P.coins = +flags.coins || 0; // dev only (flags is empty outside ?dev=1)
   const catCfg = CATS.find((c) => c.id === P.cat) || CATS[0];
 
-  // ---------- renderer ----------
+  if (startGame.started) return; // never run two render loops
+  startGame.started = true;
+
+  // ---------- renderer + quality tiers ----------
   const canvas = $("c");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-  let pixelRatio = Math.min(devicePixelRatio || 1, 2);
-  renderer.setPixelRatio(pixelRatio);
-  renderer.setSize(innerWidth, innerHeight);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" }); // AA comes from FXAA in the post pass
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.info.autoReset = false;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 900);
-  addEventListener("resize", () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+  const dpr = devicePixelRatio || 1;
+  const TIERS = {
+    high: { post: true, maxPR: Math.min(dpr, 2), grass: 3400, flowers: 700, ambient: 150 },
+    low: { post: false, maxPR: Math.min(dpr, 1.25), grass: 1800, flowers: 300, ambient: 60 },
+  };
+  const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+  let setting = flags.tier || ls.get("cats.quality") || "auto"; // auto | high | low
+  let tier = setting === "auto" ? ls.get("cats.tier") || "high" : setting;
+  if (!TIERS[tier]) tier = "high";
+  const fixedQuality = !!flags.fixed; // dev: no automatic changes (swiftshader is slow by nature)
+  let scale = Math.min(TIERS[tier].maxPR, 1.5), scaleCeil = TIERS[tier].maxPR;
+  const post = createPost(renderer);
+  const fx = createFX(scene);
+  const world = buildWorld(scene);
+  function applyScale() {
+    renderer.setPixelRatio(scale);
+    renderer.setSize(innerWidth, innerHeight);
+    camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    post.setSize(Math.round(innerWidth * scale), Math.round(innerHeight * scale));
+    fx.setViewportHeight(innerHeight * scale); world.setViewportHeight(innerHeight * scale, scale);
+  }
+  function setTier(name, persistAuto) {
+    tier = name;
+    const T = TIERS[tier];
+    world.setQuality(T);
+    scaleCeil = T.maxPR; scale = Math.min(scale, T.maxPR);
+    if (persistAuto) ls.set("cats.tier", tier);
+    document.querySelectorAll("#settings [data-q]").forEach((b) => b.classList.toggle("on", b.dataset.q === setting));
+    $("qualityNote").textContent = `Now: ${tier === "high" ? "High" : "Low"}`;
+    applyScale();
+  }
+  setTier(tier, false);
+  addEventListener("resize", applyScale);
+  $("gearBtn").addEventListener("click", () => ($("settings").hidden = !$("settings").hidden));
+  document.querySelectorAll("#settings [data-q]").forEach((b) => b.addEventListener("click", () => {
+    setting = b.dataset.q; ls.set("cats.quality", setting);
+    setTier(setting === "auto" ? (ls.get("cats.tier") || "high") : setting, false);
+  }));
+  // dynamic resolution: rolling frame time with hysteresis; falls to Low tier only in Auto mode
+  const ad = { ema: 16.7, bad: 0, good: 0, cool: 0, frames: 0, raisedAt: -1e9, lowSince: 0 };
+  function adapt(ms, nowS) {
+    if (fixedQuality || ms > 120) return;
+    ad.frames++; ad.ema += (ms - ad.ema) * 0.06;
+    if (ad.frames < 120 || nowS - ad.cool < 1.5 || shop.isOpen) return;
+    if (ad.ema > 20) {
+      ad.bad++; ad.good = 0;
+      if (ad.bad > 40) {
+        ad.bad = 0; ad.cool = nowS;
+        if (nowS - ad.raisedAt < 5) scaleCeil = Math.max(0.75, scale - 0.125); // the last raise didn't hold: don't try that again
+        if (scale > 0.76) { scale = Math.max(0.75, scale - 0.125); applyScale(); }
+        else if (tier === "high" && setting === "auto" && ad.ema > 24) { setTier("low", true); }
+      }
+    } else if (ad.ema < 17.8) {
+      ad.good++; ad.bad = 0;
+      if (ad.good > 360 && scale < scaleCeil - 0.01) { ad.good = 0; ad.cool = nowS; ad.raisedAt = nowS; scale = Math.min(scaleCeil, scale + 0.125); applyScale(); }
+    } else { ad.bad = 0; ad.good = 0; }
+  }
 
-  const world = buildWorld(scene, renderer);
   const controls = createControls({ surface: canvas, stick: $("stick"), knob: $("knob"), jumpBtn: $("jump") });
   const close = flags.cam === "close";
   controls.yaw = close ? Math.PI : 0.3;
@@ -79,11 +138,12 @@ export async function startGame({ session, flags }) {
   $("coinPill").hidden = false;
 
   // ---------- fish ----------
-  for (const f of world.fish) if (P.fish[f.id]) { f.got = true; f.group.visible = false; }
+  for (const f of world.fish) if (P.fish[f.id]) f.got = true;
   const collectFish = (f) => {
-    f.got = true; f.group.visible = false; P.fish[f.id] = true;
+    f.got = true; P.fish[f.id] = true;
     session.save({ cat: P.cat, ["fish/" + f.id]: true });
     sfx.chime(); popEl("+1 🐟"); setFishHud(); bump($("fishPill"));
+    fx.ring(f.x, f.group.position.y - 0.4, f.z); fx.burst(f.x, f.group.position.y, f.z, 26, 3.2, 0.9, 0.22, "#ffe27a", 2);
     addCoins(COIN_REWARD.fish, false); popEl(`+${COIN_REWARD.fish} 🐾`, "coin2");
     if (fishCount() >= FISH_TOTAL) {
       addCoins(COIN_REWARD.allFish, false);
@@ -145,7 +205,7 @@ export async function startGame({ session, flags }) {
       let dx = pl.x - c.x, dz = pl.z - c.z, dy = pl.y + 0.6 - (c.y + 0.9);
       const d = Math.hypot(dx, dy, dz);
       if (mag && d < mag) { const sp = (4 + 14 * (1 - d / mag)) * dt / Math.max(d, 0.01); c.x += dx * sp; c.z += dz * sp; c.y += dy * sp; }
-      if (d < 1.2) { c.alive = false; c.respawn = 7 + Math.random() * 8; addCoins(1, false); popEl("+1 🐾", "coin"); continue; }
+      if (d < 1.2) { c.alive = false; c.respawn = 7 + Math.random() * 8; addCoins(1, false); popEl("+1 🐾", "coin"); fx.burst(c.x, c.y + 0.9, c.z, 9, 2.6, 0.55, 0.2, "#ffe27a", 3); continue; }
       c.pop = Math.min(1, c.pop + dt * 3);
       cdum.position.set(c.x, c.y + 0.9 + Math.sin(t * 2.5 + c.phase) * 0.12, c.z);
       cdum.rotation.set(0, t * 2.2 + c.phase, 0);
@@ -155,45 +215,38 @@ export async function startGame({ session, flags }) {
     C.mesh.instanceMatrix.needsUpdate = true;
   }
 
-  // ---------- trails (local player only) ----------
-  const TN = 40;
-  const sparkI = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.1), new THREE.MeshBasicMaterial({ fog: false }), TN);
+  // ---------- trails (local player only): glitter via the shared particle pool, paw prints as decals ----------
   const pawG = new THREE.CircleGeometry(0.1, 8); pawG.scale(1, 1.1, 1);
-  const pawI = new THREE.InstancedMesh(
-    (() => { const parts = [pawG.clone()]; [[-0.14, 0.14], [-0.05, 0.2], [0.05, 0.2], [0.14, 0.14]].forEach(([x, z]) => { const g = new THREE.CircleGeometry(0.045, 6); g.translate(x, z, 0); parts.push(g); }); return mergeSimple(parts); })(),
-    new THREE.MeshBasicMaterial({ color: 0x7a5a3a, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }), 30);
-  sparkI.frustumCulled = pawI.frustumCulled = false;
-  const tr = { sp: new Float32Array(TN * 5), pw: new Float32Array(30 * 5), si: 0, pi: 0, tS: 0, tP: 0, foot: 1 };
+  const pawParts = [pawG.clone()];
+  [[-0.14, 0.14], [-0.05, 0.2], [0.05, 0.2], [0.14, 0.14]].forEach(([x, z]) => { const g = new THREE.CircleGeometry(0.045, 6); g.translate(x, z, 0); pawParts.push(g); });
+  const pawPos = []; pawParts.forEach((g) => { const gi = g.index ? g.toNonIndexed() : g, a = gi.attributes.position; for (let i = 0; i < a.count; i++) pawPos.push(a.getX(i), a.getY(i), a.getZ(i)); });
+  const pawGeo = new THREE.BufferGeometry(); pawGeo.setAttribute("position", new THREE.Float32BufferAttribute(pawPos, 3));
+  const pawI = new THREE.InstancedMesh(pawGeo, new THREE.MeshBasicMaterial({ color: 0x7a5a3a, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }), 30);
+  pawI.frustumCulled = false;
+  for (let i = 0; i < 30; i++) { cdum.scale.setScalar(0); cdum.updateMatrix(); pawI.setMatrixAt(i, cdum.matrix); }
+  const tr = { pw: new Float32Array(30 * 5), pi: 0, tS: 0, tP: 0, foot: 1, pawActive: false };
   const TCOLS = ["#ff9ecb", "#ffe066", "#8ce99a", "#74c0fc", "#d0a8ff"];
-  for (let i = 0; i < TN; i++) { sparkI.setColorAt(i, cc.set(TCOLS[i % 5])); tr.sp[i * 5 + 4] = 0; }
-  scene.add(sparkI, pawI);
-  function mergeSimple(geos) { // tiny merge for the paw print (position only)
-    const pos = [];
-    geos.forEach((g) => { const gi = g.index ? g.toNonIndexed() : g, a = gi.attributes.position; for (let i = 0; i < a.count; i++) pos.push(a.getX(i), a.getY(i), a.getZ(i)); });
-    const out = new THREE.BufferGeometry(); out.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); return out;
-  }
+  scene.add(pawI);
   function updateTrails(dt, moving) {
-    const fx = P.equipped.fx;
-    if (fx === "fx_glitter" && moving) { tr.tS -= dt; if (tr.tS <= 0) { tr.tS = 0.04; const o = tr.si++ % TN * 5; tr.sp[o] = pl.x + (Math.random() - 0.5) * 0.5; tr.sp[o + 1] = pl.y + 0.3 + Math.random() * 0.5; tr.sp[o + 2] = pl.z + (Math.random() - 0.5) * 0.5; tr.sp[o + 3] = Math.random() * 0.4; tr.sp[o + 4] = 1; } }
-    if (fx === "fx_paws" && moving && pl.grounded) {
+    const fxId = P.equipped.fx;
+    if (fxId === "fx_glitter" && moving) { tr.tS -= dt; if (tr.tS <= 0) { tr.tS = 0.04; fx.emit(pl.x + (Math.random() - 0.5) * 0.5, pl.y + 0.3 + Math.random() * 0.5, pl.z + (Math.random() - 0.5) * 0.5, 0, 0.5 + Math.random() * 0.4, 0, 0.8, 0.2, TCOLS[(Math.random() * 5) | 0], 0, -0.6); } }
+    if (fxId === "fx_paws" && moving && pl.grounded) {
       tr.tP -= dt;
-      if (tr.tP <= 0) { tr.tP = 0.3; tr.foot = -tr.foot; const o = tr.pi++ % 30 * 5, c = Math.cos(pl.rot), s = Math.sin(pl.rot); tr.pw[o] = pl.x + c * tr.foot * 0.17; tr.pw[o + 1] = pl.y + 0.04; tr.pw[o + 2] = pl.z - s * tr.foot * 0.17; tr.pw[o + 3] = pl.rot; tr.pw[o + 4] = 4; }
+      if (tr.tP <= 0) { tr.tP = 0.3; tr.foot = -tr.foot; const o = tr.pi++ % 30 * 5, c = Math.cos(pl.rot), s = Math.sin(pl.rot); tr.pw[o] = pl.x + c * tr.foot * 0.17; tr.pw[o + 1] = pl.y + 0.04; tr.pw[o + 2] = pl.z - s * tr.foot * 0.17; tr.pw[o + 3] = pl.rot; tr.pw[o + 4] = 4; tr.pawActive = true; }
     }
-    for (let i = 0; i < TN; i++) {
-      const o = i * 5; tr.sp[o + 4] = Math.max(0, tr.sp[o + 4] - dt * 1.3);
-      const l = tr.sp[o + 4];
-      cdum.position.set(tr.sp[o], tr.sp[o + 1] + (1 - l) * 0.8, tr.sp[o + 2]); cdum.rotation.set(0, (1 - l) * 6, 0); cdum.scale.setScalar(l);
-      cdum.updateMatrix(); sparkI.setMatrixAt(i, cdum.matrix);
-    }
+    if (!tr.pawActive) return;
+    let any = false;
     cdum.rotation.order = "YXZ";
     for (let i = 0; i < 30; i++) {
       const o = i * 5; tr.pw[o + 4] = Math.max(0, tr.pw[o + 4] - dt);
+      if (tr.pw[o + 4] > 0) any = true;
       cdum.position.set(tr.pw[o], tr.pw[o + 1], tr.pw[o + 2]); cdum.rotation.set(Math.PI / 2, tr.pw[o + 3], 0);
       cdum.scale.setScalar(Math.min(1, tr.pw[o + 4]));
       cdum.updateMatrix(); pawI.setMatrixAt(i, cdum.matrix);
     }
     cdum.rotation.order = "XYZ";
-    sparkI.instanceMatrix.needsUpdate = pawI.instanceMatrix.needsUpdate = true;
+    pawI.instanceMatrix.needsUpdate = true;
+    tr.pawActive = any;
   }
 
   // ---------- remote players ----------
@@ -242,10 +295,12 @@ export async function startGame({ session, flags }) {
   // ---------- camera / light ----------
   const camTarget = new THREE.Vector3(pl.x, pl.y + 1.1, pl.z), camPos = new THREE.Vector3(), want = new THREE.Vector3();
   let camInit = false;
-  const camDist = close ? 3.4 : 8.6;
+  const camDist0 = close ? 3.4 : 8.6;
+  let camDist = camDist0, idleT = 0;
   function updateCamera(dt) {
     const ty = pl.y + (close ? 0.95 : 1.15), kt = 1 - Math.exp(-dt * 10);
     camTarget.x += (pl.x - camTarget.x) * kt; camTarget.y += (ty - camTarget.y) * kt; camTarget.z += (pl.z - camTarget.z) * kt;
+    camDist += ((idleT > 2.5 ? camDist0 * 0.86 : camDist0) - camDist) * (1 - Math.exp(-dt * 1.4)); // gently ease in when standing still
     const cp = Math.cos(controls.pitch), sp = Math.sin(controls.pitch);
     want.set(camTarget.x - Math.sin(controls.yaw) * cp * camDist, camTarget.y + sp * camDist, camTarget.z - Math.cos(controls.yaw) * cp * camDist);
     want.y = Math.max(want.y, heightAt(want.x, want.z) + 0.9);
@@ -257,7 +312,8 @@ export async function startGame({ session, flags }) {
 
   // ---------- main loop ----------
   const mv = { x: 0, y: 0 };
-  let last = performance.now(), t = 0, stepT = 0, lastSent = 0, dirty = true, sentMoving = false, frames = 0, fpsT = 0, lastDoorCheck = 0;
+  const perf = flags.debug ? createPerf(renderer) : null;
+  let last = performance.now(), t = 0, stepT = 0, lastSent = 0, sentMoving = false, lastDoorCheck = 0, prevRot = 0, turnRate = 0, lastGrounded = true;
   const hasRadar = () => (P.upgrades.radar | 0) > 0;
   const radarEl = $("radar"), radarArrow = $("radarArrow"), radarDist = $("radarDist");
   const door = world.door;
@@ -265,6 +321,8 @@ export async function startGame({ session, flags }) {
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
+    if (perf) perf.begin(now);
+    renderer.info.reset();
 
     // input -> velocity (camera relative)
     controls.blocked = shop.isOpen;
@@ -284,8 +342,12 @@ export async function startGame({ session, flags }) {
     // jump / gravity / terrain
     const jv = upgradeValue("jump", P.upgrades.jump | 0), jumpV = 8.8 * (jv === "double" ? 1.4 : jv), ground = heightAt(pl.x, pl.z);
     if (controls.takeJump()) {
-      if (pl.grounded) { pl.vy = jumpV; pl.grounded = false; pl.usedDouble = false; sfx.jump(); }
-      else if (jv === "double" && !pl.usedDouble) { pl.vy = jumpV * 0.9; pl.usedDouble = true; sfx.jump2(); }
+      if (pl.grounded && !pl.wind) { pl.wind = 0.09; me.setCrouch(1); } // anticipation squash, then launch
+      else if (!pl.grounded && jv === "double" && !pl.usedDouble) { pl.vy = jumpV * 0.9; pl.usedDouble = true; sfx.jump2(); fx.burst(pl.x, pl.y + 0.2, pl.z, 8, 1.6, 0.5, 0.25, "#ffffff", 0); }
+    }
+    if (pl.wind) {
+      pl.wind -= dt;
+      if (pl.wind <= 0) { pl.wind = 0; me.setCrouch(0); if (pl.grounded) { pl.vy = jumpV; pl.grounded = false; pl.usedDouble = false; sfx.jump(); fx.dust(pl.x, pl.y, pl.z, 4, 0.8); } }
     }
     if (pl.grounded) {
       pl.y += (ground - pl.y) * Math.min(1, dt * 25);
@@ -296,10 +358,22 @@ export async function startGame({ session, flags }) {
     }
     me.root.position.set(pl.x, pl.y, pl.z);
     me.root.rotation.y = pl.rot;
-    me.update(dt, pl.grounded ? pl.speed : pl.speed * 0.6, !pl.grounded, pl.vy);
+    if (pl.grounded && !lastGrounded) { fx.dust(pl.x, pl.y, pl.z, 9, 1.5); sfx.step(); } // landing puff
+    lastGrounded = pl.grounded;
+    const dRot = Math.atan2(Math.sin(pl.rot - prevRot), Math.cos(pl.rot - prevRot)); prevRot = pl.rot;
+    turnRate += (dRot / Math.max(dt, 0.001) - turnRate) * Math.min(1, dt * 10);
+    // glance at the nearest collectible / butterfly
+    let nd = 49, nx = 0, nz = 0;
+    for (let i = 0; i < world.fish.length; i++) { const f = world.fish[i]; if (f.got) continue; const q = (f.x - pl.x) ** 2 + (f.z - pl.z) ** 2; if (q < nd) { nd = q; nx = f.x; nz = f.z; } }
+    for (let i = 0; i < world.butterflies.length; i++) { const p = world.butterflies[i].group.position, q = (p.x - pl.x) ** 2 + (p.z - pl.z) ** 2; if (q < nd) { nd = q; nx = p.x; nz = p.z; } }
+    for (let i = 0; i < C.items.length; i++) { const c = C.items[i]; if (!c.alive) continue; const q = (c.x - pl.x) ** 2 + (c.z - pl.z) ** 2; if (q < nd) { nd = q; nx = c.x; nz = c.z; } }
+    me.look(nd < 49 && !flags.nolook ? Math.atan2(Math.sin(Math.atan2(nx - pl.x, nz - pl.z) - pl.rot), Math.cos(Math.atan2(nx - pl.x, nz - pl.z) - pl.rot)) : null);
+    me.update(dt, pl.grounded ? pl.speed : pl.speed * 0.6, !pl.grounded, pl.vy, turnRate);
+    idleT = pl.speed < 0.3 && pl.grounded ? idleT + dt : 0;
     stepT += dt * pl.speed * 0.55;
-    if (stepT > 1) { stepT = 0; if (pl.grounded && pl.speed > 1) sfx.step(); }
+    if (stepT > 1) { stepT = 0; if (pl.grounded && pl.speed > 1) { sfx.step(); if (pl.speed > 5) fx.dust(pl.x - pl.vx * 0.04, pl.y, pl.z - pl.vz * 0.04, 2, 0.5); } }
 
+    if (perf) perf.mark();
     // world + gameplay
     world.update(dt, t, pl.x, pl.z);
     for (const f of world.fish) {
@@ -312,11 +386,14 @@ export async function startGame({ session, flags }) {
       const p = b.group.position, ddx = p.x - pl.x, ddz = p.z - pl.z;
       if (ddx * ddx + ddz * ddz < 1.3 && Math.abs(p.y - (pl.y + 0.6)) < 1.6) { b.cd = 10; addCoins(COIN_REWARD.butterfly, false); popEl(`+${COIN_REWARD.butterfly} 🦋`, "coin2"); }
     }
+    for (let i = 0; i < world.fish.length; i++) { const f = world.fish[i]; if (!f.got && Math.random() < dt * 2.2 && (f.x - pl.x) ** 2 + (f.z - pl.z) ** 2 < 900) fx.emit(f.x + (Math.random() - 0.5) * 0.8, f.group.position.y + (Math.random() - 0.5) * 0.6, f.z + (Math.random() - 0.5) * 0.8, 0, 0.5, 0, 0.9, 0.14, "#fff6b0", 0, -0.5); }
     updateCoins(dt, t);
+    fx.update(dt);
     updateConfetti(dt);
     updateTrails(dt, pl.speed > 1);
     updateRemotes(dt);
 
+    if (perf) perf.mark();
     // hud
     coinShown += (P.coins - coinShown) * Math.min(1, dt * 9);
     if (Math.abs(P.coins - coinShown) < 0.5) coinShown = P.coins;
@@ -338,6 +415,7 @@ export async function startGame({ session, flags }) {
       } else radarEl.hidden = true;
     } else radarEl.hidden = true;
 
+    if (perf) perf.mark();
     // network
     if (session.publish) {
       const moving = pl.speed > 0.3 || !pl.grounded;
@@ -347,17 +425,25 @@ export async function startGame({ session, flags }) {
       }
     }
 
-    // light follows the player so the shadow map stays tight
-    world.sun.position.set(pl.x + world.sunOffset.x, pl.y + world.sunOffset.y, pl.z + world.sunOffset.z);
-    world.sun.target.position.set(pl.x, pl.y, pl.z);
+    if (perf) perf.mark();
+    // light follows the player; snap the shadow camera to whole shadow-map texels so shadows don't shimmer
+    {
+      const R = world.lightRight, U = world.lightUp, tx = world.shadowTexel;
+      const pr = pl.x * R.x + pl.y * R.y + pl.z * R.z, pu = pl.x * U.x + pl.y * U.y + pl.z * U.z;
+      const dr = Math.round(pr / tx) * tx - pr, du = Math.round(pu / tx) * tx - pu;
+      const sx = pl.x + R.x * dr + U.x * du, sy2 = pl.y + R.y * dr + U.y * du, sz = pl.z + R.z * dr + U.z * du;
+      world.sun.position.set(sx + world.sunOffset.x, sy2 + world.sunOffset.y, sz + world.sunOffset.z);
+      world.sun.target.position.set(sx, sy2, sz);
+    }
     world.sky.position.copy(camera.position);
     updateCamera(dt);
 
-    if (!shop.isOpen) renderer.render(scene, camera);
-
-    // adaptive resolution: if the first seconds are slow, drop to 1.5x
-    if (pixelRatio > 1.5) { frames++; fpsT += dt; if (fpsT > 3) { if (frames / fpsT < 40) { pixelRatio = 1.5; renderer.setPixelRatio(1.5); renderer.setSize(innerWidth, innerHeight); } fpsT = -1e9; } }
+    if (!shop.isOpen || shop.takeDirty()) { if (TIERS[tier].post) post.render(scene, camera); else renderer.render(scene, camera); }
+    if (perf) { perf.mark(); perf.end(scale, tier + (setting === "auto" ? " (auto)" : "")); }
+    adapt(perf ? perf.frameMs : (now - lastFrameNow), now / 1000);
+    lastFrameNow = now;
   }
+  let lastFrameNow = performance.now();
   requestAnimationFrame((n) => { last = n; frame(n); });
 
   if (flags.dress) {
@@ -365,7 +451,7 @@ export async function startGame({ session, flags }) {
     applyLook(me, P.equipped, catCfg.id);
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
-  if (flags.debug) window.__g = { pl, world, P, shop };
+  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer };
   setTimeout(() => sfx.meow(), 400);
   return { renderer };
 }

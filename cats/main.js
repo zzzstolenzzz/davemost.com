@@ -7,21 +7,6 @@ const DEV = q.get("dev") === "1"; // single-player, no Firebase, progress in loc
 const show = (id) => { for (const s of ["loading", "locked", "start"]) $(s).hidden = s !== id; };
 const hideAll = () => show("none");
 
-// Little SVG cat face for the picker, drawn from the same config as the 3D cat.
-function faceSVG(c) {
-  const stripes = c.markings === "stripes" ? `<path d="M60 22v12M50 24l2 11M70 24l-2 11" stroke="${c.markingColor}" stroke-width="5" stroke-linecap="round"/>` : "";
-  const patch = c.markings === "patches" ? `<ellipse cx="38" cy="48" rx="15" ry="13" fill="${c.markingColor}"/>` : "";
-  return `<svg viewBox="0 0 120 110" aria-hidden="true">
-    <path d="M18 52 14 10 48 28Z" fill="${c.body}" stroke="#3b2a4a" stroke-width="4" stroke-linejoin="round"/><path d="M102 52 106 10 72 28Z" fill="${c.body}" stroke="#3b2a4a" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M24 42 22 22 38 31Z M96 42 98 22 82 31Z" fill="#ffb3c1"/>
-    <ellipse cx="60" cy="62" rx="46" ry="40" fill="${c.body}" stroke="#3b2a4a" stroke-width="4"/>${patch}${stripes}
-    <ellipse cx="38" cy="62" rx="9" ry="11" fill="${c.eyes}" stroke="#3b2a4a" stroke-width="3"/><ellipse cx="82" cy="62" rx="9" ry="11" fill="${c.eyes}" stroke="#3b2a4a" stroke-width="3"/>
-    <ellipse cx="38" cy="64" rx="4.5" ry="7" fill="#3b2a4a"/><ellipse cx="82" cy="64" rx="4.5" ry="7" fill="#3b2a4a"/>
-    <circle cx="41" cy="59" r="3" fill="#fff"/><circle cx="85" cy="59" r="3" fill="#fff"/>
-    <ellipse cx="60" cy="76" rx="5" ry="3.5" fill="${c.nose}"/><path d="M60 80q-5 7-11 3M60 80q5 7 11 3" stroke="#3b2a4a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <circle cx="24" cy="76" r="6" fill="#ff9fb5" opacity=".55"/><circle cx="96" cy="76" r="6" fill="#ff9fb5" opacity=".55"/></svg>`;
-}
-
 const blankProgress = (cat) => ({ cat, fish: {}, coins: 0, owned: {}, equipped: {}, upgrades: {} });
 const mergeProgress = (base, saved) => ({ ...base, ...saved, fish: saved.fish || {}, owned: saved.owned || {}, equipped: saved.equipped || {}, upgrades: saved.upgrades || {} });
 
@@ -51,16 +36,17 @@ async function boot() {
   const cards = CATS.map((c) => {
     const b = document.createElement("button");
     b.className = "cat-card"; b.dataset.id = c.id;
-    b.innerHTML = `${faceSVG(c)}<span>${c.name}</span><em></em>`;
+    b.innerHTML = `<span>${c.name}</span><em></em>`;
     b.onclick = () => { if (!b.disabled) { chosen = c.id; mark(); } };
     grid.append(b);
     return b;
   });
-  const mark = () => cards.forEach((b) => b.classList.toggle("sel", b.dataset.id === chosen));
+  let turn = null;
+  const mark = () => { cards.forEach((b) => b.classList.toggle("sel", b.dataset.id === chosen)); turn && turn.select(chosen); };
   mark();
   // Remember who's online so two players can't both be the same cat (checked once more on Play).
-  let taken = {};
-  if (net) net.watchPlayers((all) => {
+  let taken = {}, unwatch = null;
+  if (net) unwatch = net.watchPlayers((all) => {
     taken = {};
     for (const [uid, v] of Object.entries(all)) if (uid !== user.uid && v) taken[v.cat] = true;
     cards.forEach((b) => { b.disabled = !!taken[b.dataset.id]; b.querySelector("em").textContent = b.disabled ? "playing now" : ""; });
@@ -72,6 +58,8 @@ async function boot() {
 
   const go = async () => {
     unlockAudio();
+    if (turn) { turn.dispose(); turn = null; }
+    if (unwatch) { unwatch(); unwatch = null; } // the start-screen listener must not keep firing during play
     show("loading");
     const P = mergeProgress(blankProgress(chosen), saved);
     P.cat = chosen;
@@ -86,7 +74,11 @@ async function boot() {
     $("hud").hidden = false;
   };
   $("play").onclick = go;
-  if (DEV && q.get("autostart") === "1") go(); else show("start");
+  if (DEV && q.get("autostart") === "1") go();
+  else {
+    show("start");
+    import("./turntable.js").then(({ createTurntable }) => { if (!$("start").hidden) { turn = createTurntable($("turn"), chosen, (id) => { const b = cards.find((x) => x.dataset.id === id); if (b && !b.disabled) { chosen = id; mark(); } }); } }).catch(() => {});
+  }
 }
 
 function lock({ uid, note }) {

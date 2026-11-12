@@ -44,6 +44,7 @@ export const UPGRADES = [
   { id: "radar", name: "Fish Radar", icon: "📡", desc: (v) => `Arrow to fish within ${v} steps`, base: 0, tiers: [{ price: 150, value: 30 }, { price: 300, value: 60 }, { price: 520, value: 999 }] },
 ];
 export const itemById = (id) => ITEMS.find((i) => i.id === id);
-export const upgradeValue = (id, level) => { const u = UPGRADES.find((x) => x.id === id); return level > 0 ? u.tiers[level - 1].value : u.base; };
+const UPGRADE_BY_ID = Object.fromEntries(UPGRADES.map((u) => [u.id, u])); // no per-call allocation: this runs every frame
+export const upgradeValue = (id, level) => { const u = UPGRADE_BY_ID[id]; return level > 0 ? u.tiers[level - 1].value : u.base; };
 
 export const COIN_REWARD = { fish: 10, allFish: 50, butterfly: 2 };

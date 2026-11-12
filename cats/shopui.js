@@ -18,6 +18,7 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
   const root = $("shop");
   let tab = "hats", open = false;
   const cache = new Map();
+  let dirty = false; // previews draw into a corner of the main canvas; ask the game loop for one clean frame afterwards
 
   // --- preview rig: one cat, rendered into a corner of the main canvas and copied out ---
   const pscene = new THREE.Scene();
@@ -49,6 +50,7 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     renderer.setScissorTest(false); renderer.setViewport(0, 0, size.x, size.y); renderer.setClearColor(prevClear, prevA);
     const url = out.toDataURL("image/png");
     cache.set(key, url);
+    dirty = true;
     return url;
   }
 
@@ -120,6 +122,7 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
 
   const api = {
     get isOpen() { return open; },
+    takeDirty() { const d = dirty; dirty = false; return d; },
     open(t) { if (t && TABS.some((x) => x.id === t)) tab = t; open = true; controls.blocked = true; root.hidden = false; render(); },
     close() { if (!open) return; open = false; root.hidden = true; hudCoin($("coinPill")); },
   };

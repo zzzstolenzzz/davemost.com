@@ -12,6 +12,9 @@
 <meta name="theme-color" content="#a9dcf7">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
@@ -31,6 +34,8 @@
   <button id="jump" class="ui">JUMP</button>
 </div>
 <button id="muteBtn" class="round ui" aria-label="Mute">🔊</button>
+<button id="gearBtn" class="round ui" aria-label="Settings">⚙️</button>
+<div id="settings" class="ui" hidden><b>Graphics</b><div class="seg"><button data-q="auto">Auto</button><button data-q="high">High</button><button data-q="low">Low</button></div><small id="qualityNote"></small></div>
 <div id="shop" hidden></div>
 
 <section id="loading" class="screen">
@@ -57,7 +62,7 @@
   <div class="card-box wide">
     <h1>Cat Adventure</h1>
     <p id="hello"></p>
-    <p>Pick your cat!</p>
+    <canvas id="turn"></canvas>
     <div id="cats"></div>
     <button id="play" class="main">Play!</button>
     <button id="signout-start" class="small">Not you? Sign out</button>

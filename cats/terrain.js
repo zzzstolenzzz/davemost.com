@@ -48,3 +48,23 @@ export function resolveCollisions(p) {
     if (d2 < rr * rr) { const d = Math.sqrt(d2) || 0.001; p.x = c.x + (dx / d) * rr; p.z = c.z + (dz / d) * rr; }
   }
 }
+
+// Dirt paths connecting the landmarks (spawn, cottage door, bridge, hill).
+export const PATHS = [
+  [[0, -4], [4, 8], [-6, 18], [-14, 23]],
+  [[4, 8], [14, 10], [24, 13]],
+  [[24, 31], [6, 40], [-14, 44], [-27, 46], [-33, 49]],
+  [[0, -4], [20, -25], [48, -30]],
+];
+export function pathMask(x, z) {
+  let best = 1e9;
+  for (const path of PATHS) {
+    for (let i = 0; i < path.length - 1; i++) {
+      const [ax, az] = path[i], [bx, bz] = path[i + 1], dx = bx - ax, dz = bz - az;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
+      const d = Math.hypot(x - (ax + dx * t), z - (az + dz * t));
+      if (d < best) best = d;
+    }
+  }
+  return 1 - sstep(1.0, 2.4, best);
+}
