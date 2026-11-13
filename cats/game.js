@@ -296,11 +296,13 @@ export async function startGame({ session, flags }) {
   const camTarget = new THREE.Vector3(pl.x, pl.y + 1.1, pl.z), camPos = new THREE.Vector3(), want = new THREE.Vector3();
   let camInit = false;
   const camDist0 = close ? 3.4 : 8.6;
-  let camDist = camDist0, idleT = 0;
+  let zoomS = controls.zoom, idleF = 1, idleT = 0; // zoomS: the player's pinch/wheel zoom, eased; idleF: the slow ease-in when standing still
   function updateCamera(dt) {
     const ty = pl.y + (close ? 0.95 : 1.15), kt = 1 - Math.exp(-dt * 10);
     camTarget.x += (pl.x - camTarget.x) * kt; camTarget.y += (ty - camTarget.y) * kt; camTarget.z += (pl.z - camTarget.z) * kt;
-    camDist += ((idleT > 2.5 ? camDist0 * 0.86 : camDist0) - camDist) * (1 - Math.exp(-dt * 1.4)); // gently ease in when standing still
+    zoomS += (controls.zoom - zoomS) * (1 - Math.exp(-dt * 9));
+    idleF += ((idleT > 2.5 ? 0.86 : 1) - idleF) * (1 - Math.exp(-dt * 1.4)); // gently ease in when standing still
+    const camDist = camDist0 * zoomS * idleF;
     const cp = Math.cos(controls.pitch), sp = Math.sin(controls.pitch);
     want.set(camTarget.x - Math.sin(controls.yaw) * cp * camDist, camTarget.y + sp * camDist, camTarget.z - Math.cos(controls.yaw) * cp * camDist);
     want.y = Math.max(want.y, heightAt(want.x, want.z) + 0.9);
@@ -489,7 +491,7 @@ export async function startGame({ session, flags }) {
     applyLook(me, P.equipped, catCfg.id);
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
-  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer };
+  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera };
   if (flags.debug === "2") { // dev: list the heaviest meshes
     const rows = [];
     scene.traverse((o) => { if (!o.geometry) return; const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); rows.push([Math.round(n), o.type, o.castShadow ? "shadow" : "", o.material.customProgramCacheKey ? o.material.customProgramCacheKey() : o.material.type]); });

@@ -13,9 +13,38 @@ export function createControls(dom) {
   document.addEventListener("touchmove", (e) => { const g = e.target.closest?.(".shop-box .grid"); if (!g || g.scrollHeight <= g.clientHeight) e.preventDefault(); }, { passive: false });
   document.addEventListener("touchstart", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
+  // Camera zoom (a multiplier on the follow distance, read by game.js): pinch, mouse wheel, trackpad pinch (wheel + ctrlKey). Remembered for next time.
+  const ZMIN = 0.5, ZMAX = 2.2;
+  let saveT = 0;
+  try { st.zoom = Math.min(ZMAX, Math.max(ZMIN, +localStorage.getItem("cats.zoom") || 1)); } catch { st.zoom = 1; }
+  const setZoom = (z) => {
+    st.zoom = Math.min(ZMAX, Math.max(ZMIN, z));
+    clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem("cats.zoom", String(st.zoom)); } catch {} }, 400);
+  };
+  addEventListener("wheel", (e) => {
+    if (e.ctrlKey) e.preventDefault(); // never let the browser zoom the page
+    if (st.blocked || e.target !== dom.surface) return; // over the shop / other overlays the wheel is theirs
+    e.preventDefault();
+    setZoom(st.zoom * Math.exp(e.deltaY * (e.ctrlKey ? 0.01 : 0.0015) * (e.deltaMode === 1 ? 16 : 1)));
+  }, { passive: false });
+  const touches = new Map(); // touch pointers down on the game surface: id -> {x, y}
+  let pinch = null;          // { a, b, d0, z0 } while two fingers (neither the joystick) are zooming
+  const pinchDist = () => { const [p, q] = [touches.get(pinch.a), touches.get(pinch.b)]; return Math.hypot(p.x - q.x, p.y - q.y) || 1; };
+
   const surface = dom.surface;
   surface.addEventListener("pointerdown", (e) => {
     if (st.blocked || e.target.closest("button, .ui")) return;
+    if (e.pointerType === "touch") {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      surface.setPointerCapture?.(e.pointerId); // so its pointerup always reaches us, even over a HUD button
+      const ids = [...touches.keys()];
+      if (!pinch && ids.length === 2 && !ids.includes(stickId)) {
+        orbitId = null; st.orbiting = false; st.lastOrbit = performance.now(); // the first finger was orbiting; it zooms now
+        pinch = { a: ids[0], b: ids[1], d0: 0, z0: st.zoom }; pinch.d0 = pinchDist();
+        return;
+      }
+      if (pinch) return;
+    }
     surface.setPointerCapture?.(e.pointerId);
     if (e.pointerType === "mouse") { orbitId = e.pointerId; lx = e.clientX; ly = e.clientY; st.orbiting = true; st.lastOrbit = performance.now(); return; }
     if (e.clientX < innerWidth / 2 && stickId === null) {
@@ -27,6 +56,11 @@ export function createControls(dom) {
     }
   });
   surface.addEventListener("pointermove", (e) => {
+    if (touches.has(e.pointerId)) {
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      surface.setPointerCapture?.(e.pointerId); // so its pointerup always reaches us, even over a HUD button
+      if (pinch && (e.pointerId === pinch.a || e.pointerId === pinch.b)) { setZoom(pinch.z0 * pinch.d0 / pinchDist()); return; }
+    }
     if (e.pointerId === stickId) {
       let dx = e.clientX - sx, dy = e.clientY - sy;
       const d = Math.hypot(dx, dy);
@@ -42,6 +76,8 @@ export function createControls(dom) {
     }
   });
   const end = (e) => {
+    touches.delete(e.pointerId);
+    if (pinch && (e.pointerId === pinch.a || e.pointerId === pinch.b)) pinch = null; // the remaining finger does nothing until it lifts
     if (e.pointerId === stickId) { stickId = null; st.mx = st.my = 0; stick.classList.remove("on"); }
     if (e.pointerId === orbitId) { orbitId = null; st.orbiting = false; st.lastOrbit = performance.now(); }
   };
