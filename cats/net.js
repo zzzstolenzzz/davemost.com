@@ -26,12 +26,16 @@ export const saveProgress = (uid, patch) => update(ref(db, `cats/progress/${uid}
 export function watchPlayers(cb) {
   return onValue(ref(db, "cats/players"), (s) => cb(s.val() || {}));
 }
+// Presence is per page load (uid_sid), so one account on two devices shows two cats. Progress stays per uid.
+const sid = Array.from(crypto.getRandomValues(new Uint8Array(10)), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+export const keyFor = (uid) => `${uid}_${sid}`;
+export const isPresenceKey = (k) => /^[A-Za-z0-9]+_[a-z0-9]{8,10}$/.test(k); // ignores old bare-uid records
 let presenceRef = null;
 // onDisconnect is consumed when it fires, so re-arm it on every (re)connect.
 onValue(ref(db, ".info/connected"), (s) => { if (s.val() && presenceRef) onDisconnect(presenceRef).remove(); });
 export function publish(uid, state) {
   if (!presenceRef) {
-    presenceRef = ref(db, `cats/players/${uid}`);
+    presenceRef = ref(db, `cats/players/${keyFor(uid)}`);
     onDisconnect(presenceRef).remove();
   }
   return set(presenceRef, { ...state, t: serverTimestamp() });

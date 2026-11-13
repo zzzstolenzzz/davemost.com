@@ -256,16 +256,16 @@ export async function startGame({ session, flags }) {
   function onPlayers(all) {
     const now = performance.now();
     for (const [uid, v] of Object.entries(all)) {
-      if (uid === session.uid || !v) continue;
+      if (uid === session.key || !v || !/^[A-Za-z0-9]+_[a-z0-9]{8,10}$/.test(uid)) continue; // not me (full uid_sid key); old bare-uid records ignored
       const cfg = CATS.find((c) => c.id === v.cat); if (!cfg) continue;
       let r = remotes.get(uid);
       if (!r || r.catId !== v.cat) {
         if (r) scene.remove(r.cat.root);
-        const cat = buildCat(cfg), tag = makeNameTag(cfg.name, cfg.body);
+        const name = cfg.name + (v.cat === catCfg.id ? " 2" : ""), cat = buildCat(cfg), tag = makeNameTag(name, cfg.body); // same cat as mine: "2" tells them apart
         tag.material.depthTest = false; tag.renderOrder = 5; // stays readable behind hills and trees
         cat.root.add(tag);
         scene.add(cat.root);
-        r = { cat, tag, cfg, catId: v.cat, x: v.x, y: v.y, z: v.z, rot: v.rotY, speed: 0, eq: "" };
+        r = { cat, tag, cfg, name, catId: v.cat, x: v.x, y: v.y, z: v.z, rot: v.rotY, speed: 0, eq: "" };
         cat.root.position.set(v.x, v.y, v.z); remotes.set(uid, r);
         sfx.chime(); // her sister just came online
       }
@@ -278,14 +278,14 @@ export async function startGame({ session, flags }) {
   if (session.watchPlayers) session.watchPlayers(onPlayers);
   // dev (?dev=1&ghost=1): a fake second player wandering the island, fed through the same onPlayers path as a real one.
   // ghostat=x,z parks it; window.__g.ghost.fixed = {x, z} does the same from a test.
-  const ghost = { fixed: flags.ghostat ? { x: +flags.ghostat.split(",")[0], z: +flags.ghostat.split(",")[1] } : null };
+  const ghost = { key: session.uid + "_ghost00001", fixed: flags.ghostat ? { x: +flags.ghostat.split(",")[0], z: +flags.ghostat.split(",")[1] } : null };
   if (flags.ghost) {
     const other = CATS.find((c) => c.id !== catCfg.id) || CATS[0];
     const tick = () => {
       const a = performance.now() / 1000 * 0.35;
       let x = -10 + 20 * Math.cos(a), z = 30 + 15 * Math.sin(a), rot = Math.atan2(-20 * Math.sin(a), 15 * Math.cos(a));
       if (ghost.fixed) { x = ghost.fixed.x; z = ghost.fixed.z; }
-      onPlayers({ ghost: { cat: other.id, x, y: heightAt(x, z), z, rotY: rot } });
+      onPlayers({ [ghost.key]: { cat: other.id, x, y: heightAt(x, z), z, rotY: rot } });
     };
     tick(); setInterval(tick, 110);
   }
@@ -509,7 +509,7 @@ export async function startGame({ session, flags }) {
     applyLook(me, P.equipped, catCfg.id);
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
-  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera, ghost, finder, remotes };
+  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera, ghost, finder, remotes, onPlayers, session };
   if (flags.debug === "2") { // dev: list the heaviest meshes
     const rows = [];
     scene.traverse((o) => { if (!o.geometry) return; const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); rows.push([Math.round(n), o.type, o.castShadow ? "shadow" : "", o.material.customProgramCacheKey ? o.material.customProgramCacheKey() : o.material.type]); });

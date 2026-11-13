@@ -51,7 +51,7 @@ export function createFinder({ camera, hud }) {
   function make(uid, r) {
     const el = document.createElement("div"); el.className = "fp pulse"; el.style.setProperty("--c", r.cfg.body);
     el.innerHTML = `<div class="rot">${ARROW}</div><div class="badge">${headSvg(r.cfg)}</div><div class="lb"><b></b> <span></span></div>`;
-    el.querySelector("b").textContent = r.cfg.name;
+    el.querySelector("b").textContent = r.name;
     layer.append(el);
     const dot = document.createElement("div"); dot.className = "mm-dot"; dot.style.background = r.cfg.body; map.append(dot);
     const e = { el, dot, rot: el.firstChild, lbl: el.querySelector("span"), x: 0, y: 0, ax: -1e9, ay: -1e9, ar: -1e9, shown: true, txt: "", dx: -1e9, dz: -1e9, snap: true };

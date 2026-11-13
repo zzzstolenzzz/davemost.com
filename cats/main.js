@@ -48,7 +48,7 @@ async function boot() {
   let taken = {}, unwatch = null;
   if (net) unwatch = net.watchPlayers((all) => {
     taken = {};
-    for (const [uid, v] of Object.entries(all)) if (uid !== user.uid && v) taken[v.cat] = true;
+    for (const [key, v] of Object.entries(all)) if (key !== net.keyFor(user.uid) && net.isPresenceKey(key) && v) taken[v.cat] = true;
     cards.forEach((b) => { b.disabled = !!taken[b.dataset.id]; b.querySelector("em").textContent = b.disabled ? "playing now" : ""; });
     if (taken[chosen]) { chosen = CATS.find((c) => !taken[c.id])?.id || chosen; mark(); }
   });
@@ -64,8 +64,8 @@ async function boot() {
     const P = mergeProgress(blankProgress(chosen), saved);
     P.cat = chosen;
     const session = DEV
-      ? { uid: "dev", P, save() { try { localStorage.setItem(LS, JSON.stringify(P)); } catch {} }, publish: null, watchPlayers: null }
-      : { uid: user.uid, P, save: (patch) => net.saveProgress(user.uid, patch).catch(() => {}), publish: (s) => net.publish(user.uid, s).catch(() => {}), watchPlayers: net.watchPlayers };
+      ? { uid: "dev", key: "dev_devdevdev1", P, save() { try { localStorage.setItem(LS, JSON.stringify(P)); } catch {} }, publish: null, watchPlayers: null }
+      : { uid: user.uid, key: net.keyFor(user.uid), P, save: (patch) => net.saveProgress(user.uid, patch).catch(() => {}), publish: (s) => net.publish(user.uid, s).catch(() => {}), watchPlayers: net.watchPlayers };
     session.save({ cat: chosen });
     const flags = DEV ? Object.fromEntries(q.entries()) : {};
     const { startGame } = await import("./game.js");
