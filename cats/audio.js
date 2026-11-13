@@ -50,17 +50,28 @@ function tone({ type = "sine", from, to = from, dur = 0.1, vol = 0.2, delay = 0,
 }
 
 let noiseBuf = null;
-export function step() { // soft paw patter
+// Soft paw "pit-pat": two quick, muffled taps. Low-passed noise with a gentle attack, plus a tiny low thump for the pad.
+function pawTap(delay, vol) {
+  const t = actx.currentTime + delay;
+  const src = actx.createBufferSource(), lp = actx.createBiquadFilter(), g = actx.createGain();
+  src.buffer = noiseBuf; lp.type = "lowpass"; lp.frequency.value = 650 + Math.random() * 350; lp.Q.value = 0.4;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0005, t + 0.06);
+  src.connect(lp).connect(g).connect(actx.destination);
+  src.start(t); src.stop(t + 0.07);
+  const f = 150 + Math.random() * 50;
+  tone({ type: "sine", from: f, to: f * 0.65, dur: 0.07, vol: vol * 0.55, delay });
+}
+export function step() {
   if (!actx || muted) return;
   if (!noiseBuf) {
-    noiseBuf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.05), actx.sampleRate);
+    noiseBuf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.08), actx.sampleRate);
     const d = noiseBuf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   }
-  const src = actx.createBufferSource(), bp = actx.createBiquadFilter(), g = actx.createGain();
-  src.buffer = noiseBuf; bp.type = "bandpass"; bp.frequency.value = 700 + Math.random() * 500; g.gain.value = 0.16;
-  src.connect(bp).connect(g).connect(actx.destination);
-  src.start();
+  pawTap(0, 0.07 + Math.random() * 0.02);
+  pawTap(0.07, 0.045 + Math.random() * 0.015);
 }
 export const jump = () => tone({ type: "sine", from: 220, to: 520, dur: 0.16, vol: 0.22 });
 export const jump2 = () => tone({ type: "sine", from: 330, to: 700, dur: 0.14, vol: 0.2 });
