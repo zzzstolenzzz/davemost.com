@@ -1,7 +1,7 @@
 // Touch-first controls: floating joystick (left half), jump button, drag-to-orbit (right half), keyboard + mouse fallback.
 export function createControls(dom) {
   const { stick, knob, jumpBtn } = dom;
-  const st = { mx: 0, my: 0, yaw: 0, pitch: 0.38, jump: false, blocked: false };
+  const st = { mx: 0, my: 0, yaw: 0, pitch: 0.38, jump: false, blocked: false, orbiting: false, lastOrbit: -1e9 }; // lastOrbit: performance.now() of the last manual camera drag
   const keys = new Set();
   let stickId = null, orbitId = null, sx = 0, sy = 0, lx = 0, ly = 0;
   const RADIUS = 55;
@@ -16,13 +16,13 @@ export function createControls(dom) {
   surface.addEventListener("pointerdown", (e) => {
     if (st.blocked || e.target.closest("button, .ui")) return;
     surface.setPointerCapture?.(e.pointerId);
-    if (e.pointerType === "mouse") { orbitId = e.pointerId; lx = e.clientX; ly = e.clientY; return; }
+    if (e.pointerType === "mouse") { orbitId = e.pointerId; lx = e.clientX; ly = e.clientY; st.orbiting = true; st.lastOrbit = performance.now(); return; }
     if (e.clientX < innerWidth / 2 && stickId === null) {
       stickId = e.pointerId; sx = e.clientX; sy = e.clientY;
       stick.style.left = sx + "px"; stick.style.top = sy + "px"; stick.classList.add("on");
       knob.style.transform = "translate(-50%,-50%)";
     } else if (e.clientX >= innerWidth / 2 && orbitId === null) {
-      orbitId = e.pointerId; lx = e.clientX; ly = e.clientY;
+      orbitId = e.pointerId; lx = e.clientX; ly = e.clientY; st.orbiting = true; st.lastOrbit = performance.now();
     }
   });
   surface.addEventListener("pointermove", (e) => {
@@ -37,12 +37,12 @@ export function createControls(dom) {
     } else if (e.pointerId === orbitId) {
       st.yaw += (e.clientX - lx) * 0.006;
       st.pitch = Math.min(1.25, Math.max(0.06, st.pitch + (e.clientY - ly) * 0.005));
-      lx = e.clientX; ly = e.clientY;
+      lx = e.clientX; ly = e.clientY; st.lastOrbit = performance.now();
     }
   });
   const end = (e) => {
     if (e.pointerId === stickId) { stickId = null; st.mx = st.my = 0; stick.classList.remove("on"); }
-    if (e.pointerId === orbitId) orbitId = null;
+    if (e.pointerId === orbitId) { orbitId = null; st.orbiting = false; st.lastOrbit = performance.now(); }
   };
   surface.addEventListener("pointerup", end);
   surface.addEventListener("pointercancel", end);

@@ -311,15 +311,30 @@ export async function startGame({ session, flags }) {
   }
 
   // ---------- main loop ----------
-  const mv = { x: 0, y: 0 };
+  const mv = { x: 0, y: 0 }, inp = { held: false, ang: 0, yaw: controls.yaw };
+  // dev (?camtest=1): hold the stick toward the screen for 5 s of game time and log camera yaw vs heading + path straightness
+  const camTest = flags.camtest ? {
+    t: 0, n: 0, x0: 0, z0: 0, dev: 0, hx: 0, hz: 0, done: false,
+    drive(m) { if (this.t > 0.5 && this.t < 5.5) { m.x = 0; m.y = -1; } },
+    log(dt) {
+      if (this.done) return;
+      this.t += dt;
+      if (this.t > 1.0 && !this.hx && !this.hz) { this.x0 = pl.x; this.z0 = pl.z; this.hx = Math.sin(pl.rot); this.hz = Math.cos(pl.rot); }
+      if (this.hx || this.hz) this.dev = Math.max(this.dev, Math.abs((pl.x - this.x0) * this.hz - (pl.z - this.z0) * this.hx));
+      const d = Math.atan2(Math.sin(pl.rot - controls.yaw), Math.cos(pl.rot - controls.yaw));
+      if (this.n++ % 6 === 0) console.log(`CAMTEST t=${this.t.toFixed(2)} yaw=${controls.yaw.toFixed(3)} heading=${pl.rot.toFixed(3)} off=${(d * 57.3).toFixed(1)}deg speed=${pl.speed.toFixed(1)} pos=${pl.x.toFixed(2)},${pl.z.toFixed(2)}`);
+      if (this.t > 5.5) { this.done = true; console.log(`CAMTEST done: final off=${(d * 57.3).toFixed(1)}deg, max sideways drift of path=${this.dev.toFixed(3)}m`); }
+    },
+  } : null;
   const perf = flags.debug ? createPerf(renderer) : null;
   let last = performance.now(), t = 0, stepT = 0, lastSent = 0, sentMoving = false, lastDoorCheck = 0, prevRot = 0, turnRate = 0, lastGrounded = true;
   const hasRadar = () => (P.upgrades.radar | 0) > 0;
   const radarEl = $("radar"), radarArrow = $("radarArrow"), radarDist = $("radarDist");
   const door = world.door;
 
+  let camSync = false;
   function frame(now) {
-    requestAnimationFrame(frame);
+    if (!camSync) requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
     if (perf) perf.begin(now);
     renderer.info.reset();
@@ -327,7 +342,20 @@ export async function startGame({ session, flags }) {
     // input -> velocity (camera relative)
     controls.blocked = shop.isOpen;
     controls.read(mv);
-    const sy = Math.sin(controls.yaw), cy = Math.cos(controls.yaw);
+    if (camTest) camTest.drive(mv);
+    // Movement is camera-relative, but the camera now swings behind the cat by itself. To stop that feeding back
+    // (stick held toward the screen -> camera turns -> "toward the screen" changes -> cat curves), the camera yaw used
+    // for input is LATCHED while the stick is held roughly steady. It re-latches when the stick is released, moved to a
+    // clearly new direction (> ~35 degrees), or while the player is dragging the camera.
+    {
+      const m = Math.hypot(mv.x, mv.y);
+      if (m < 0.15) inp.held = false;
+      else {
+        const a = Math.atan2(mv.x, mv.y);
+        if (!inp.held || controls.orbiting || Math.abs(Math.atan2(Math.sin(a - inp.ang), Math.cos(a - inp.ang))) > 0.6) { inp.held = true; inp.ang = a; inp.yaw = controls.yaw; }
+      }
+    }
+    const sy = Math.sin(inp.yaw), cy = Math.cos(inp.yaw);
     const maxSp = 7.2 * upgradeValue("speed", P.upgrades.speed | 0), mag = Math.min(1, Math.hypot(mv.x, mv.y));
     const dx = sy * mv.y - cy * mv.x, dz = cy * mv.y + sy * mv.x;
     const dl = Math.hypot(dx, dz) || 1;
@@ -435,16 +463,26 @@ export async function startGame({ session, flags }) {
       world.sun.position.set(sx + world.sunOffset.x, sy2 + world.sunOffset.y, sz + world.sunOffset.z);
       world.sun.target.position.set(sx, sy2, sz);
     }
+    // auto-follow: while the cat is moving (and the player hasn't touched the camera for a moment) ease the camera
+    // round to behind the cat's heading. Gentle when a little off, quicker when the cat runs toward the screen.
+    if (pl.speed > 1.2 && !controls.orbiting && now - controls.lastOrbit > 1700 && !shop.isOpen) {
+      const d = Math.atan2(Math.sin(pl.rot - controls.yaw), Math.cos(pl.rot - controls.yaw)), ad = Math.abs(d);
+      const u = Math.min(1, Math.max(0, (ad - 1.0) / 1.2)), k = 2.0 + 3.0 * u * u * (3 - 2 * u);
+      controls.yaw += d * (1 - Math.exp(-k * dt));
+    }
+    if (camTest) camTest.log(dt);
     world.sky.position.copy(camera.position);
     updateCamera(dt);
 
-    if (!shop.isOpen || shop.takeDirty()) { if (TIERS[tier].post) post.render(scene, camera); else renderer.render(scene, camera); }
+    if (flags.camtest === "2" && !camTest.done) { /* dev: logic-only frames so the scripted test runs quickly */ }
+    else if (!shop.isOpen || shop.takeDirty()) { if (TIERS[tier].post) post.render(scene, camera); else renderer.render(scene, camera); }
     if (perf) { perf.mark(); perf.end(scale, tier + (setting === "auto" ? " (auto)" : "")); }
     adapt(perf ? perf.frameMs : (now - lastFrameNow), now / 1000);
     lastFrameNow = now;
   }
   let lastFrameNow = performance.now();
   requestAnimationFrame((n) => { last = n; frame(n); });
+  if (flags.camtest === "2") { camSync = true; let n = performance.now(); last = n; for (let i = 0; i < 400; i++) { n += 16.7; frame(n); } camSync = false; } // dev: run the scripted camera test at a simulated 60 fps
 
   if (flags.dress) {
     P.equipped = { hat: "hat_crown", glasses: "glasses_heart", neck: "neck_scarf" };
