@@ -9,7 +9,8 @@ export function createControls(dom) {
   // iOS: no scrolling, no pinch/double-tap zoom, no context menu.
   const stop = (e) => e.preventDefault();
   ["gesturestart", "gesturechange", "gestureend", "contextmenu", "dblclick"].forEach((ev) => document.addEventListener(ev, stop, { passive: false }));
-  document.addEventListener("touchmove", stop, { passive: false });
+  // ...except a drag inside the shop's item list, when that list really has more to scroll to
+  document.addEventListener("touchmove", (e) => { const g = e.target.closest?.(".shop-box .grid"); if (!g || g.scrollHeight <= g.clientHeight) e.preventDefault(); }, { passive: false });
   document.addEventListener("touchstart", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
   const surface = dom.surface;

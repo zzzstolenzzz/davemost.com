@@ -112,10 +112,43 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     grid.replaceChildren();
     if (tab === "upgrades") UPGRADES.forEach((u) => grid.append(upgradeCard(u)));
     else ITEMS.filter((i) => i.tab === tab && (!i.cat || i.cat === catCfg.id)).forEach((i) => grid.append(card(i)));
+    hint();
+  }
+
+  // "there's more" cue: fades + big round arrows at the edges of the list, shown only while there is more that way
+  function hint() {
+    const g = root.querySelector(".grid"), w = g.parentElement;
+    w.classList.toggle("can-up", g.scrollTop > 4);
+    w.classList.toggle("can-down", g.scrollTop + g.clientHeight < g.scrollHeight - 4);
   }
 
   root.innerHTML = `<div class="shop-box ui"><div class="shop-head"><h2>🏠 Cozy Shop</h2><div class="shop-coins">🐾 <b>0</b></div><button class="close" aria-label="Close">✕</button></div>
-    <div class="tabs">${TABS.map((t) => `<button class="tab" data-tab="${t.id}"><span>${t.icon}</span>${t.name}</button>`).join("")}</div><div class="grid"></div></div>`;
+    <div class="tabs">${TABS.map((t) => `<button class="tab" data-tab="${t.id}"><span>${t.icon}</span>${t.name}</button>`).join("")}</div><div class="grid-wrap"><div class="grid"></div>
+    <button class="more up" aria-label="Scroll up">▲</button><button class="more down" aria-label="Scroll down">▼</button></div></div>`;
+  const gridEl = root.querySelector(".grid");
+  gridEl.addEventListener("scroll", hint, { passive: true });
+  new ResizeObserver(hint).observe(gridEl);
+  root.querySelectorAll(".more").forEach((b) => (b.onclick = () => {
+    sfx.tick(); gridEl.scrollBy({ top: (b.classList.contains("up") ? -1 : 1) * gridEl.clientHeight * 0.85, behavior: "smooth" });
+  }));
+  // mouse click-drag scrolling (touch and wheel scroll natively); a drag must not "click" the card it ended on
+  gridEl.addEventListener("mousedown", (e) => {
+    if (e.button) return;
+    let y = e.clientY, moved = false;
+    const move = (m) => {
+      if (!moved && Math.abs(m.clientY - y) < 6) return;
+      if (!moved) { moved = true; gridEl.classList.add("dragging"); }
+      gridEl.scrollTop -= m.clientY - y; y = m.clientY;
+    };
+    const up = () => {
+      removeEventListener("mousemove", move); removeEventListener("mouseup", up); gridEl.classList.remove("dragging");
+      if (!moved) return;
+      const eat = (c) => c.stopPropagation();
+      gridEl.addEventListener("click", eat, { capture: true, once: true });
+      setTimeout(() => gridEl.removeEventListener("click", eat, true), 0);
+    };
+    addEventListener("mousemove", move); addEventListener("mouseup", up);
+  });
   root.querySelector(".close").onclick = () => api.close();
   root.addEventListener("click", (e) => { if (e.target === root) api.close(); });
   root.querySelectorAll(".tab").forEach((t) => (t.onclick = () => { tab = t.dataset.tab; sfx.tick(); render(); root.querySelector(".grid").scrollTop = 0; }));
@@ -126,5 +159,33 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     open(t) { if (t && TABS.some((x) => x.id === t)) tab = t; open = true; controls.blocked = true; root.hidden = false; render(); },
     close() { if (!open) return; open = false; root.hidden = true; hudCoin($("coinPill")); },
   };
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("dev") === "1" && qs.get("shoptest") === "1") setTimeout(() => runTest(), 3000); // dev only: scripted scroll check, result in document.title
+  async function runTest() {
+    const R = {}, wait = (ms) => new Promise((r) => setTimeout(r, ms)), g = gridEl, wrap = g.parentElement, tabsEl = root.querySelector(".tabs");
+    const mm = () => ({ sh: g.scrollHeight, ch: g.clientHeight, st: Math.round(g.scrollTop) });
+    const touch = (el) => { const ev = new TouchEvent("touchmove", { bubbles: true, cancelable: true }); el.dispatchEvent(ev); return ev.defaultPrevented; };
+    const mouse = (t, type, y) => t.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, clientX: 300, clientY: y, button: 0 }));
+    R.open = open; R.vw = innerWidth; R.vh = innerHeight; R.boxH = root.querySelector(".shop-box").offsetHeight;
+    R.tabsH = tabsEl.offsetHeight; R.tabsOverflowX = tabsEl.scrollWidth > tabsEl.clientWidth;
+    R.hats = mm(); R.hatsHint = wrap.className;
+    const c = g.querySelector(".card");
+    R.touchOnCard = touch(c); R.touchOnCanvas = touch($("c"));
+    g.scrollBy({ top: 120, behavior: "instant" }); await wait(100); R.scrollBy = mm();
+    g.scrollTop = 0; await wait(100);
+    root.querySelector(".more.down").click(); await wait(900); R.afterMore = mm(); R.hintAfterMore = wrap.className;
+    for (let i = 0; i < 8 && wrap.classList.contains("can-down"); i++) { root.querySelector(".more.down").click(); await wait(900); }
+    R.end = mm(); R.endHint = wrap.className;
+    root.querySelector(".more.up").click(); await wait(900); R.afterUp = mm();
+    g.scrollTop = 0; await wait(50);
+    const coins = P.coins; mouse(c, "mousedown", 400); mouse(window, "mousemove", 350); mouse(window, "mousemove", 250); mouse(window, "mouseup", 250); c.querySelector("button").click(); R.mouseDrag = mm(); R.coinsSpentByDrag = coins - P.coins;
+    g.scrollTop = 200; root.querySelector('.tab[data-tab="upgrades"]').click(); await wait(100); R.upgradesTab = mm(); R.upgradesHint = wrap.className;
+    R.tabsInView = [...root.querySelectorAll(".tab")].every((t) => { const r = t.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; });
+    dispatchEvent(new KeyboardEvent("keydown", { code: "Escape" })); R.closedByEsc = !open;
+    api.open("hats"); root.dispatchEvent(new MouseEvent("click", { bubbles: true })); R.closedByBackdrop = !open;
+    api.open("hats"); await wait(100);
+    document.title = "SHOPTEST " + JSON.stringify(R);
+    const pre = document.createElement("pre"); pre.id = "shoptest"; pre.hidden = true; pre.textContent = JSON.stringify(R); document.body.append(pre);
+  }
   return api;
 }
