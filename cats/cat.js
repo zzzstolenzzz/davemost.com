@@ -273,15 +273,16 @@ export function buildCat(cfg) {
   return cat;
 }
 
-export function makeNameTag(text) {
+export function makeNameTag(text, dot) {
   const c = document.createElement("canvas");
   c.width = 256; c.height = 72;
   const g = c.getContext("2d");
   g.fillStyle = "rgba(255,250,240,0.94)";
   g.beginPath(); g.roundRect(8, 8, 240, 56, 28); g.fill();
   g.lineWidth = 3; g.strokeStyle = "rgba(90,60,80,0.55)"; g.stroke();
-  g.fillStyle = "#4a3350"; g.font = "600 34px Fredoka, ui-rounded, system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-  g.fillText(text, 128, 38);
+  g.font = "600 34px Fredoka, ui-rounded, system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  if (dot) { g.beginPath(); g.arc(44, 36, 13, 0, 7); g.fillStyle = dot; g.fill(); g.lineWidth = 3; g.strokeStyle = "#4a3350"; g.stroke(); }
+  g.fillStyle = "#4a3350"; g.fillText(text, dot ? 144 : 128, 38);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, fog: false, depthWrite: false }));

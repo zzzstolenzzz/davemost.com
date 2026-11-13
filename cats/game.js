@@ -6,6 +6,7 @@ import { createPerf } from "./perf.js";
 import { createPost } from "./post.js";
 import { createFX } from "./fx.js";
 import { createShop } from "./shopui.js";
+import { createFinder } from "./finder.js";
 import * as sfx from "./audio.js";
 import { CATS } from "./config.js";
 import { itemById, upgradeValue, COIN_REWARD } from "./shop.js";
@@ -251,26 +252,42 @@ export async function startGame({ session, flags }) {
 
   // ---------- remote players ----------
   const remotes = new Map();
-  if (session.watchPlayers) {
-    session.watchPlayers((all) => {
-      const now = performance.now();
-      for (const [uid, v] of Object.entries(all)) {
-        if (uid === session.uid || !v) continue;
-        const cfg = CATS.find((c) => c.id === v.cat); if (!cfg) continue;
-        let r = remotes.get(uid);
-        if (!r || r.catId !== v.cat) {
-          if (r) scene.remove(r.cat.root);
-          const cat = buildCat(cfg); cat.root.add(makeNameTag(cfg.name));
-          scene.add(cat.root);
-          r = { cat, catId: v.cat, x: v.x, y: v.y, z: v.z, rot: v.rotY, speed: 0, eq: "" };
-          cat.root.position.set(v.x, v.y, v.z); remotes.set(uid, r);
-        }
-        r.tx = v.x; r.ty = v.y; r.tz = v.z; r.trot = v.rotY; r.seen = now;
-        const eqs = JSON.stringify(v.equipped || {});
-        if (eqs !== r.eq) { r.eq = eqs; applyLook(r.cat, v.equipped, v.cat); }
+  const finder = createFinder({ camera, hud: $("hud") });
+  function onPlayers(all) {
+    const now = performance.now();
+    for (const [uid, v] of Object.entries(all)) {
+      if (uid === session.uid || !v) continue;
+      const cfg = CATS.find((c) => c.id === v.cat); if (!cfg) continue;
+      let r = remotes.get(uid);
+      if (!r || r.catId !== v.cat) {
+        if (r) scene.remove(r.cat.root);
+        const cat = buildCat(cfg), tag = makeNameTag(cfg.name, cfg.body);
+        tag.material.depthTest = false; tag.renderOrder = 5; // stays readable behind hills and trees
+        cat.root.add(tag);
+        scene.add(cat.root);
+        r = { cat, tag, cfg, catId: v.cat, x: v.x, y: v.y, z: v.z, rot: v.rotY, speed: 0, eq: "" };
+        cat.root.position.set(v.x, v.y, v.z); remotes.set(uid, r);
+        sfx.chime(); // her sister just came online
       }
-      for (const [uid, r] of remotes) if (!all[uid]) { scene.remove(r.cat.root); remotes.delete(uid); }
-    });
+      r.tx = v.x; r.ty = v.y; r.tz = v.z; r.trot = v.rotY; r.seen = now;
+      const eqs = JSON.stringify(v.equipped || {});
+      if (eqs !== r.eq) { r.eq = eqs; applyLook(r.cat, v.equipped, v.cat); }
+    }
+    for (const [uid, r] of remotes) if (!all[uid]) { scene.remove(r.cat.root); remotes.delete(uid); }
+  }
+  if (session.watchPlayers) session.watchPlayers(onPlayers);
+  // dev (?dev=1&ghost=1): a fake second player wandering the island, fed through the same onPlayers path as a real one.
+  // ghostat=x,z parks it; window.__g.ghost.fixed = {x, z} does the same from a test.
+  const ghost = { fixed: flags.ghostat ? { x: +flags.ghostat.split(",")[0], z: +flags.ghostat.split(",")[1] } : null };
+  if (flags.ghost) {
+    const other = CATS.find((c) => c.id !== catCfg.id) || CATS[0];
+    const tick = () => {
+      const a = performance.now() / 1000 * 0.35;
+      let x = -10 + 20 * Math.cos(a), z = 30 + 15 * Math.sin(a), rot = Math.atan2(-20 * Math.sin(a), 15 * Math.cos(a));
+      if (ghost.fixed) { x = ghost.fixed.x; z = ghost.fixed.z; }
+      onPlayers({ ghost: { cat: other.id, x, y: heightAt(x, z), z, rotY: rot } });
+    };
+    tick(); setInterval(tick, 110);
   }
   const angleLerp = (a, b, k) => a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * k;
   function updateRemotes(dt) {
@@ -475,6 +492,7 @@ export async function startGame({ session, flags }) {
     if (camTest) camTest.log(dt);
     world.sky.position.copy(camera.position);
     updateCamera(dt);
+    finder.update(now, dt, remotes, pl, innerWidth, innerHeight);
 
     if (flags.camtest === "2" && !camTest.done) { /* dev: logic-only frames so the scripted test runs quickly */ }
     else if (!shop.isOpen || shop.takeDirty()) { if (TIERS[tier].post) post.render(scene, camera); else renderer.render(scene, camera); }
@@ -491,7 +509,7 @@ export async function startGame({ session, flags }) {
     applyLook(me, P.equipped, catCfg.id);
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
-  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera };
+  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera, ghost, finder, remotes };
   if (flags.debug === "2") { // dev: list the heaviest meshes
     const rows = [];
     scene.traverse((o) => { if (!o.geometry) return; const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); rows.push([Math.round(n), o.type, o.castShadow ? "shadow" : "", o.material.customProgramCacheKey ? o.material.customProgramCacheKey() : o.material.type]); });
