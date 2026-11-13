@@ -6,13 +6,13 @@ const $ = (id) => document.getElementById(id);
 // Where the preview camera looks, per slot (cat faces +Z, head is near (0, 0.95, 0.4)).
 const FRAMES = {
   hat: { pos: [0.5, 1.6, 2.3], look: [0, 1.12, 0.4], fov: 35 },
-  glasses: { pos: [0.45, 1.15, 1.9], look: [0, 0.97, 0.4], fov: 30 },
+  glasses: { pos: [0.5, 1.12, 2.7], look: [0, 1.0, 0.5], fov: 30 },
   neck: { pos: [0.7, 1.1, 2.1], look: [0, 0.85, 0.3], fov: 38 },
-  back: { pos: [-1.7, 1.3, -1.9], look: [0, 0.75, -0.1], fov: 38 },
+  back: { pos: [-1.9, 1.5, -1.9], look: [0, 0.8, 0], fov: 38 },
   fur: { pos: [1.9, 1.25, 2.5], look: [0, 0.65, 0], fov: 38 },
   fx: { pos: [-1.7, 1.2, -2.5], look: [0, 0.6, -0.2], fov: 40 },
 };
-const BG = { hats: "#ffe3ee", neck: "#e6f0ff", glasses: "#fff3c9", looks: "#e9ffe0" };
+const BG = { hats: "#ffe1e8", neck: "#dcebfb", glasses: "#ffeec2", looks: "#e2f6d5" };
 
 export function createShop({ renderer, P, session, catCfg, onEquipChange, controls, sfx, hudCoin }) {
   const root = $("shop");
@@ -22,8 +22,8 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
 
   // --- preview rig: one cat, rendered into a corner of the main canvas and copied out ---
   const pscene = new THREE.Scene();
-  pscene.add(new THREE.HemisphereLight(0xcfeaff, 0xf6d8a8, 1.6));
-  const dl = new THREE.DirectionalLight(0xfff0d0, 2.4); dl.position.set(3, 5, 4); pscene.add(dl);
+  pscene.add(new THREE.HemisphereLight(0xc4d2ff, 0xffdcb4, 2.0));
+  const dl = new THREE.DirectionalLight(0xffe2bc, 2.6); dl.position.set(3, 5, 4); pscene.add(dl);
   const pcat = buildCat(catCfg); pscene.add(pcat.root);
   const pcam = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
   const out = document.createElement("canvas"); out.width = out.height = 280;

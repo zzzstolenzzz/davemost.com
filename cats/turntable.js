@@ -11,13 +11,13 @@ export function createTurntable(canvas, selectedId, onPick) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene();
-  scene.add(new THREE.HemisphereLight(0xb9ccff, 0xf3d9b0, 1.0));
-  const sun = new THREE.DirectionalLight(0xffe9c4, 3); sun.position.set(2, 4, 3); scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xc4d2ff, 0xffdcb4, 1.9));
+  const sun = new THREE.DirectionalLight(0xffe2bc, 2.7); sun.position.set(2, 4, 3); scene.add(sun);
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
   camera.position.set(0, 1.5, 6.2); camera.lookAt(0, 0.7, 0);
   const slots = CATS.map((cfg, i) => {
     const g = new THREE.Group(), cat = buildCat(cfg);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, 0.18, 36), toon(i ? "#8fbaf5" : "#ff9fbd", { rim: 0.1 }));
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.05, 0.18, 36), toon(i ? "#9cc4f5" : "#ffa9c3", { rim: 0.1 }));
     base.position.y = -0.09;
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.97, 0.04, 8, 36), toon("#ffffff", { rim: 0 }));
     ring.rotation.x = Math.PI / 2; ring.position.y = 0.0;

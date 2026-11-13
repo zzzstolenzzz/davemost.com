@@ -36,7 +36,7 @@ export async function startGame({ session, flags }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" }); // AA comes from FXAA in the post pass
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 0.92;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.info.autoReset = false;
@@ -44,8 +44,8 @@ export async function startGame({ session, flags }) {
   const camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.3, 900);
   const dpr = devicePixelRatio || 1;
   const TIERS = {
-    high: { post: true, maxPR: Math.min(dpr, 2), grass: 3400, flowers: 700, ambient: 150 },
-    low: { post: false, maxPR: Math.min(dpr, 1.25), grass: 1800, flowers: 300, ambient: 60 },
+    high: { post: true, maxPR: Math.min(dpr, 2), grass: 3900, grassFar: 2400, flowers: 700, ambient: 150, shadow: 2048 },
+    low: { post: false, maxPR: Math.min(dpr, 1.25), grass: 2000, grassFar: 1100, flowers: 350, ambient: 60, shadow: 1024 },
   };
   const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
   let setting = flags.tier || ls.get("cats.quality") || "auto"; // auto | high | low
@@ -452,6 +452,11 @@ export async function startGame({ session, flags }) {
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
   if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer };
+  if (flags.debug === "2") { // dev: list the heaviest meshes
+    const rows = [];
+    scene.traverse((o) => { if (!o.geometry) return; const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); rows.push([Math.round(n), o.type, o.castShadow ? "shadow" : "", o.material.customProgramCacheKey ? o.material.customProgramCacheKey() : o.material.type]); });
+    rows.sort((a, b) => b[0] - a[0]); console.log("MESHES " + rows.slice(0, 22).map((r) => r.join(" ")).join(" | "));
+  }
   setTimeout(() => sfx.meow(), 400);
   return { renderer };
 }

@@ -1,11 +1,47 @@
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
-// 4-step toon ramp (nearest-filtered so the bands stay crisp).
-const ramp = new THREE.DataTexture(new Uint8Array([105, 165, 220, 255]), 4, 1, THREE.RedFormat);
-ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
+// Soft toon ramp: a gentle gradient inside the shadow, then a smooth (not banded) terminator into full light.
+const RW = 256, rampData = new Uint8Array(RW);
+for (let i = 0; i < RW; i++) {
+  const u = i / (RW - 1), t = Math.min(1, Math.max(0, (u - 0.43) / 0.2)), lit = t * t * (3 - 2 * t);
+  rampData[i] = Math.round(255 * ((0.3 + 0.14 * u) * (1 - lit) + lit * (0.9 + 0.1 * u)));
+}
+export const ramp = new THREE.DataTexture(rampData, RW, 1, THREE.RedFormat);
+ramp.minFilter = ramp.magFilter = THREE.LinearFilter;
 ramp.generateMipmaps = false;
 ramp.needsUpdate = true;
+
+// Shared tileable noise (RGBA, 256px): R = big soft patches, G = medium, B = fine grain, A = a second big-patch field.
+// Sampled by the terrain, grass, water, foliage and fur shaders instead of computing hash noise per pixel.
+export const noiseTex = (() => {
+  const N = 256, d = new Uint8Array(N * N * 4);
+  let seed = 1234567;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const chan = (c, basePeriod, octaves) => {
+    const acc = new Float32Array(N * N);
+    let amp = 1, tot = 0;
+    for (let o = 0, per = basePeriod; o < octaves; o++, per *= 2, amp *= 0.5) {
+      const L = new Float32Array(per * per).map(rnd), cell = N / per;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const fx = x / cell, fy = y / cell, ix = Math.floor(fx), iy = Math.floor(fy);
+        let tx = fx - ix, ty = fy - iy; tx = tx * tx * (3 - 2 * tx); ty = ty * ty * (3 - 2 * ty);
+        const x0 = ix % per, x1 = (ix + 1) % per, y0 = iy % per, y1 = (iy + 1) % per;
+        const a = L[y0 * per + x0], b = L[y0 * per + x1], e = L[y1 * per + x0], f = L[y1 * per + x1];
+        acc[y * N + x] += amp * (a + (b - a) * tx + (e - a + (f - b - e + a) * tx) * ty);
+      }
+      tot += amp;
+    }
+    let lo = 1e9, hi = -1e9;
+    for (let i = 0; i < N * N; i++) { lo = Math.min(lo, acc[i]); hi = Math.max(hi, acc[i]); }
+    for (let i = 0; i < N * N; i++) d[i * 4 + c] = Math.round(255 * (acc[i] - lo) / (hi - lo));
+  };
+  chan(0, 4, 5); chan(1, 12, 4); chan(2, 48, 2); chan(3, 5, 4);
+  const t = new THREE.DataTexture(d, N, N, THREE.RGBAFormat);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+  t.generateMipmaps = true; t.needsUpdate = true;
+  return t;
+})();
 
 export const INK = 0x3b2a4a;
 export const time = { value: 0 }; // shared shader clock (sway, shimmer)
@@ -18,7 +54,7 @@ export function toon(color, { rim = 0.12, sway = 0, ...opts } = {}) {
     s.uniforms.uTime = time;
     s.fragmentShader = s.fragmentShader.replace("#include <opaque_fragment>",
       `float rimF = pow(1.0 - saturate(dot(normalize(vViewPosition), normal)), 2.6);
-       outgoingLight += vec3(0.85, 0.88, 1.0) * rimF * ${rim.toFixed(3)} * (0.4 + 0.6 * max(dot(normal, vec3(0.0, 1.0, 0.0)), 0.0));
+       outgoingLight += (diffuseColor.rgb * 0.6 + vec3(0.4, 0.34, 0.26)) * rimF * ${rim.toFixed(3)} * 1.6;
        #include <opaque_fragment>`);
     if (sway) {
       s.vertexShader = "uniform float uTime;\n" + s.vertexShader.replace("#include <begin_vertex>",
@@ -38,7 +74,7 @@ export function toon(color, { rim = 0.12, sway = 0, ...opts } = {}) {
 let olMat = null;
 export function outlineMaterial() {
   if (!olMat) {
-    olMat = new THREE.MeshBasicMaterial({ color: INK, side: THREE.BackSide });
+    olMat = new THREE.MeshBasicMaterial({ color: 0x6a4250, side: THREE.BackSide });
     olMat.onBeforeCompile = (s) => {
       s.vertexShader = "attribute float ol;\n" + s.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\ntransformed += normalize(normal) * ol;");
     };
@@ -57,7 +93,8 @@ function smoothNormals(geo) {
 
 const _o = new THREE.Object3D(), _c = new THREE.Color();
 // Merge many parts into ONE geometry (one draw call) with vertex colors, plus an optional merged outline hull.
-// part: { g, m (Matrix4, overrides p/r/s), c: "#hex", p, r, s, ol: outline thickness (none if 0), slot, grad: ["#dark","#light"], gy: [y0, k], blush }
+// part: { g, m (Matrix4, overrides p/r/s), c: "#hex", p, r, s, ol: outline thickness (none if 0), slot, grad: ["#dark","#light"] (by normal), gy: [y0, k],
+//         vg: ["#bottom","#top"] (by height within the part), keep: true (geometry already has vertex colours), blush }
 // Returns { geo, outGeo, slot, shade, blush, n }. `shade` = per-vertex up-facing factor (cats use it for fur gradient).
 export function bake(parts, { aoH = 0, smooth = true } = {}) {
   const vis = [], out = [], slots = [], shades = [], blushes = [];
@@ -67,7 +104,8 @@ export function bake(parts, { aoH = 0, smooth = true } = {}) {
     if (g.index) g = g.toNonIndexed();
     g.computeBoundingBox();
     const y0 = g.boundingBox.min.y, yh = Math.max(1e-4, g.boundingBox.max.y - y0), posA = g.attributes.position;
-    const n = posA.count, bl = new Float32Array(n);
+    const n = posA.count, bl = new Float32Array(n), vt = p.vg ? new Float32Array(n) : null, pre = p.keep ? g.attributes.color.array.slice() : null;
+    if (vt) for (let i = 0; i < n; i++) vt[i] = (posA.getY(i) - y0) / yh;
     if (p.blush) for (let i = 0; i < n; i++) bl[i] = THREE.MathUtils.smoothstep((posA.getY(i) - y0) / yh, 0.45, 1);
     if (p.m) g.applyMatrix4(p.m);
     else {
@@ -76,11 +114,13 @@ export function bake(parts, { aoH = 0, smooth = true } = {}) {
       g.applyMatrix4(_o.matrix);
     }
     const nor = g.attributes.normal, col = new Float32Array(n * 3), sh = new Float32Array(n);
-    const base = p.c ? new THREE.Color(p.c) : null, dark = p.grad ? new THREE.Color(p.grad[0]) : null, light = p.grad ? new THREE.Color(p.grad[1]) : null;
+    const base = p.c ? new THREE.Color(p.c) : null, gr = p.vg || p.grad, dark = gr ? new THREE.Color(gr[0]) : null, light = gr ? new THREE.Color(gr[1]) : null;
     for (let i = 0; i < n; i++) {
       const ny = nor.getY(i);
       sh[i] = ny > 0 ? 1 - 0.13 * ny : 1 - 0.1 * ny; // darker back, lighter belly
-      if (p.grad) _c.copy(dark).lerp(light, THREE.MathUtils.smoothstep(0.5 + 0.55 * ny + (p.gy ? (posA.getY(i) - p.gy[0]) * p.gy[1] : 0), 0.15, 0.95));
+      if (pre) _c.setRGB(pre[i * 3], pre[i * 3 + 1], pre[i * 3 + 2]);
+      else if (vt) _c.copy(dark).lerp(light, vt[i]);
+      else if (p.grad) _c.copy(dark).lerp(light, THREE.MathUtils.smoothstep(0.5 + 0.55 * ny + (p.gy ? (posA.getY(i) - p.gy[0]) * p.gy[1] : 0), 0.15, 0.95));
       else if (base) _c.copy(base);
       else _c.setRGB(1, 1, 1);
       if (aoH) _c.multiplyScalar(THREE.MathUtils.lerp(0.68, 1, THREE.MathUtils.clamp(posA.getY(i) / aoH, 0, 1)));
