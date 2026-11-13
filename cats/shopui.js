@@ -1,11 +1,12 @@
 import * as THREE from "three";
 import { buildCat } from "./cat.js";
-import { ITEMS, TABS, UPGRADES, itemById } from "./shop.js";
+import { ITEMS, TABS, UPGRADES, RARITY, itemById } from "./shop.js";
 
 const $ = (id) => document.getElementById(id);
 // Where the preview camera looks, per slot (cat faces +Z, head is near (0, 0.95, 0.4)).
 const FRAMES = {
   hat: { pos: [0.5, 1.6, 2.3], look: [0, 1.12, 0.4], fov: 35 },
+  hatTall: { pos: [0.5, 1.95, 2.9], look: [0, 1.3, 0.4], fov: 38 }, // unicorn horn, halo, santa hat
   glasses: { pos: [0.5, 1.12, 2.7], look: [0, 1.0, 0.5], fov: 30 },
   neck: { pos: [0.7, 1.1, 2.1], look: [0, 0.85, 0.3], fov: 38 },
   back: { pos: [-1.9, 1.5, -1.9], look: [0, 0.8, 0], fov: 38 },
@@ -38,7 +39,7 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     pcat.setPalette(fi && fi.cat === catCfg.id ? fi.palette : null);
     pcat.setRainbowTail(it.id === "fx_rainbow");
     for (let i = 0; i < 6; i++) pcat.update(0.05, 1.5, false);
-    const f = FRAMES[it.slot];
+    const f = FRAMES[it.frame || it.slot];
     pcam.fov = f.fov; pcam.updateProjectionMatrix(); pcam.position.set(...f.pos); pcam.lookAt(...f.look);
     const S = 180, pr = renderer.getPixelRatio(), size = renderer.getSize(new THREE.Vector2());
     renderer.getClearColor(prevClear); const prevA = renderer.getClearAlpha();
@@ -73,17 +74,18 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     if (!next || P.coins < next.price) { sfx.nope(); return; }
     P.coins -= next.price; P.upgrades[u.id] = lvl + 1;
     persist({ coins: P.coins, ["upgrades/" + u.id]: lvl + 1 });
-    sfx.buy(); render();
+    sfx.buy(); boughtId = u.id; render(); boughtId = null;
   }
+  let boughtId = null;
 
   function card(it) {
     const owned = !!P.owned[it.id], eq = P.equipped[it.slot] === it.id, can = P.coins >= it.price;
     const el = document.createElement("div");
-    el.className = "card" + (eq ? " equipped" : owned ? " owned" : can ? "" : " locked");
+    el.className = "card r-" + it.rarity + (eq ? " equipped" : owned ? " owned" : can ? "" : " locked");
     const img = new Image(); img.alt = it.name; img.src = preview(it);
     const state = eq ? '<span class="badge">Wearing</span>' : owned ? '<span class="badge own">Owned</span>' : `<span class="price">🐾 ${it.price}</span>`;
     el.append(img);
-    el.insertAdjacentHTML("beforeend", `<div class="cname">${it.name}</div><div class="cstate">${state}</div>`);
+    el.insertAdjacentHTML("beforeend", `<span class="ribbon">${RARITY[it.rarity]}</span><div class="cname">${it.name}</div><div class="cstate">${state}</div>`);
     const b = document.createElement("button");
     if (eq) { b.textContent = "Take off"; b.className = "alt"; b.onclick = () => toggle(it); }
     else if (owned) { b.textContent = "Wear"; b.onclick = () => toggle(it); }
@@ -93,13 +95,14 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
   }
   function upgradeCard(u) {
     const lvl = P.upgrades[u.id] | 0, next = u.tiers[lvl], el = document.createElement("div");
-    el.className = "card up" + (next && P.coins < next.price ? " locked" : "");
+    el.className = "card up" + (next && P.coins < next.price ? " locked" : "") + (!next ? " maxed" : "") + (boughtId === u.id ? " bought" : "");
     const cur = lvl ? u.desc(u.tiers[lvl - 1].value) : "Not unlocked yet";
-    el.innerHTML = `<div class="bigicon">${u.icon}</div><div class="cname">${u.name}</div>
+    el.innerHTML = `${next ? "" : '<span class="maxb">MAX</span>'}<div class="bigicon i-${u.id}">${u.icon}</div><div class="cname">${u.name}</div>
       <div class="pips">${u.tiers.map((_, i) => `<i class="${i < lvl ? "on" : ""}"></i>`).join("")}</div>
       <div class="cdesc">${next ? "Next: " + u.desc(next.value) : cur}</div>`;
     const b = document.createElement("button");
-    if (!next) { b.textContent = "Maxed out!"; b.disabled = true; }
+    if (boughtId === u.id) el.insertAdjacentHTML("beforeend", Array.from({ length: 8 }, (_, i) => `<i class="cbit" style="--a:${i * 45}deg">🐾</i>`).join(""));
+    if (!next) { b.textContent = "All done!"; b.disabled = true; }
     else { const can = P.coins >= next.price; b.textContent = can ? `Upgrade  🐾 ${next.price}` : `🐾 ${next.price}  (need ${next.price - P.coins} more)`; b.disabled = !can; b.onclick = () => upgrade(u); }
     el.append(b);
     return el;
@@ -111,7 +114,7 @@ export function createShop({ renderer, P, session, catCfg, onEquipChange, contro
     const grid = root.querySelector(".grid");
     grid.replaceChildren();
     if (tab === "upgrades") UPGRADES.forEach((u) => grid.append(upgradeCard(u)));
-    else ITEMS.filter((i) => i.tab === tab && (!i.cat || i.cat === catCfg.id)).forEach((i) => grid.append(card(i)));
+    else ITEMS.filter((i) => i.tab === tab && (!i.cat || i.cat === catCfg.id)).sort((a, b) => a.price - b.price).forEach((i) => grid.append(card(i)));
     hint();
   }
 

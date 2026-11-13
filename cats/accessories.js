@@ -3,6 +3,7 @@
 // Optional userData.update(t, speed) animates it (the cape).
 import * as THREE from "three";
 import { toon, bake, bakedMesh, mat4 } from "./toon.js";
+import { FANCY } from "./fancy.js";
 
 const mat = toon("#ffffff", { vertexColors: true, rim: 0.35 });
 const matDS = toon("#ffffff", { vertexColors: true, rim: 0.35, side: THREE.DoubleSide });
@@ -103,13 +104,13 @@ export const ACCESSORIES = {
     const heart = new THREE.Shape();
     heart.moveTo(0, -0.09); heart.bezierCurveTo(-0.16, 0.02, -0.07, 0.14, 0, 0.06); heart.bezierCurveTo(0.07, 0.14, 0.16, 0.02, 0, -0.09);
     const geo = new THREE.ExtrudeGeometry(heart, { depth: 0.02, bevelEnabled: false });
-    return group([...[-1, 1].flatMap((sx) => [pt(geo, "#ff4d8d", [sx * 0.17, 0.005, 0.07], 0.008, { s: [0.95, 0.95, 1] }), temple("#ff4d8d", sx, 0.03)])]);
+    return group([...[-1, 1].flatMap((sx) => [pt(geo, "#ff4d8d", [sx * 0.17, 0.005, 0.07], 0.008, { s: [0.74, 0.74, 1] }), temple("#ff4d8d", sx, 0.03)])]);
   },
   glasses_star() {
     const star = new THREE.Shape();
     for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + Math.PI / 2, r = i % 2 ? 0.055 : 0.125; star[i ? "lineTo" : "moveTo"](Math.cos(a) * r, Math.sin(a) * r); }
     const geo = new THREE.ExtrudeGeometry(star, { depth: 0.02, bevelEnabled: false });
-    return group([...[-1, 1].flatMap((sx) => [pt(geo, "#ffd43b", [sx * 0.175, 0, 0.07], 0.008), temple("#ffd43b", sx, 0.02)]), { g: new THREE.BoxGeometry(0.08, 0.015, 0.015), c: "#ffd43b", p: [0, 0.02, 0.08] }]);
+    return group([...[-1, 1].flatMap((sx) => [pt(geo, "#ffd43b", [sx * 0.175, 0, 0.07], 0.008, { s: [0.8, 0.8, 1] }), temple("#ffd43b", sx, 0.02)]), { g: new THREE.BoxGeometry(0.08, 0.015, 0.015), c: "#ffd43b", p: [0, 0.02, 0.08] }]);
   },
   back_pack() {
     return group([
@@ -134,4 +135,5 @@ export const ACCESSORIES = {
     g.userData.update = (t, k) => segs.forEach((s, i) => { s.rotation.x = 0.12 + k * 0.5 + Math.sin(t * 3 - i) * (0.06 + 0.1 * k); s.rotation.z = Math.sin(t * 2.3 - i * 0.8) * 0.05; });
     return g;
   },
+  ...FANCY,
 };

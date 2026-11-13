@@ -1,7 +1,7 @@
 // Touch-first controls: floating joystick (left half), jump button, drag-to-orbit (right half), keyboard + mouse fallback.
 export function createControls(dom) {
   const { stick, knob, jumpBtn } = dom;
-  const st = { mx: 0, my: 0, yaw: 0, pitch: 0.38, jump: false, blocked: false, orbiting: false, lastOrbit: -1e9 }; // lastOrbit: performance.now() of the last manual camera drag
+  const st = { mx: 0, my: 0, yaw: 0, pitch: 0.38, jump: false, blocked: false, jumpHeld: false, orbiting: false, lastOrbit: -1e9 }; // lastOrbit: performance.now() of the last manual camera drag
   const keys = new Set();
   let stickId = null, orbitId = null, sx = 0, sy = 0, lx = 0, ly = 0;
   const RADIUS = 55;
@@ -84,16 +84,16 @@ export function createControls(dom) {
   surface.addEventListener("pointerup", end);
   surface.addEventListener("pointercancel", end);
 
-  jumpBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); st.jump = true; jumpBtn.classList.add("down"); });
-  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => jumpBtn.addEventListener(ev, () => jumpBtn.classList.remove("down")));
+  jumpBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); st.jump = true; st.jumpHeld = true; jumpBtn.classList.add("down"); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => jumpBtn.addEventListener(ev, () => { jumpBtn.classList.remove("down"); st.jumpHeld = false; }));
 
   addEventListener("keydown", (e) => {
     if (st.blocked) return;
-    if (e.code === "Space") { st.jump = true; e.preventDefault(); }
+    if (e.code === "Space") { st.jump = true; st.jumpHeld = true; e.preventDefault(); }
     keys.add(e.code);
   });
-  addEventListener("keyup", (e) => keys.delete(e.code));
-  addEventListener("blur", () => keys.clear());
+  addEventListener("keyup", (e) => { keys.delete(e.code); if (e.code === "Space") st.jumpHeld = false; });
+  addEventListener("blur", () => { keys.clear(); st.jumpHeld = false; });
 
   // Combine joystick + keyboard into out.mx/my (each in -1..1).
   st.read = (out) => {

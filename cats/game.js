@@ -7,6 +7,8 @@ import { createPost } from "./post.js";
 import { createFX } from "./fx.js";
 import { createShop } from "./shopui.js";
 import { createFinder } from "./finder.js";
+import { fancy } from "./fancy.js";
+import { toon } from "./toon.js";
 import * as sfx from "./audio.js";
 import { CATS } from "./config.js";
 import { itemById, upgradeValue, COIN_REWARD } from "./shop.js";
@@ -66,6 +68,7 @@ export async function startGame({ session, flags }) {
   }
   function setTier(name, persistAuto) {
     tier = name;
+    fancy.on = tier === "high"; // sparkle flourishes on accessories: High only
     const T = TIERS[tier];
     world.setQuality(T);
     scaleCeil = T.maxPR; scale = Math.min(scale, T.maxPR);
@@ -194,7 +197,8 @@ export async function startGame({ session, flags }) {
   const C = world.coins, spot = { x: 0, y: 0, z: 0 }, cdum = new THREE.Object3D();
   C.items.forEach((c) => { world.randomSpot(spot); c.x = spot.x; c.y = spot.y; c.z = spot.z; c.alive = true; c.pop = 1; });
   function updateCoins(dt, t) {
-    const mag = upgradeValue("magnet", P.upgrades.magnet | 0);
+    const mag = upgradeValue("magnet", P.upgrades.magnet | 0), lk = upgradeValue("lucky", P.upgrades.lucky | 0);
+    let magNear = false;
     for (let i = 0; i < C.items.length; i++) {
       const c = C.items[i];
       if (!c.alive) {
@@ -205,8 +209,15 @@ export async function startGame({ session, flags }) {
       }
       let dx = pl.x - c.x, dz = pl.z - c.z, dy = pl.y + 0.6 - (c.y + 0.9);
       const d = Math.hypot(dx, dy, dz);
-      if (mag && d < mag) { const sp = (4 + 14 * (1 - d / mag)) * dt / Math.max(d, 0.01); c.x += dx * sp; c.z += dz * sp; c.y += dy * sp; }
-      if (d < 1.2) { c.alive = false; c.respawn = 7 + Math.random() * 8; addCoins(1, false); popEl("+1 🐾", "coin"); fx.burst(c.x, c.y + 0.9, c.z, 9, 2.6, 0.55, 0.2, "#ffe27a", 3); continue; }
+      if (mag && d < mag) {
+        const sp = (4 + 14 * (1 - d / mag)) * dt / Math.max(d, 0.01); c.x += dx * sp; c.z += dz * sp; c.y += dy * sp; magNear = true;
+        if (Math.random() < dt * 14) fx.emit(c.x, c.y + 0.9, c.z, 0, 0.2, 0, 0.35, 0.16, "#ffe9a0", 0, -0.6); // sparkle trail on coins streaming in
+      }
+      if (d < 1.2) {
+        c.alive = false; c.respawn = 7 + Math.random() * 8; addCoins(1 + lk, false); popEl(`+${1 + lk} 🐾`, "coin"); fx.burst(c.x, c.y + 0.9, c.z, 9, 2.6, 0.55, 0.2, "#ffe27a", 3);
+        if (lk) fx.burst(c.x, c.y + 1.0, c.z, 6 + lk * 3, 2.2, 0.8, 0.22, "#ffd43b", -1); // Lucky Paw: golden sparkle
+        continue;
+      }
       c.pop = Math.min(1, c.pop + dt * 3);
       cdum.position.set(c.x, c.y + 0.9 + Math.sin(t * 2.5 + c.phase) * 0.12, c.z);
       cdum.rotation.set(0, t * 2.2 + c.phase, 0);
@@ -214,6 +225,40 @@ export async function startGame({ session, flags }) {
       cdum.updateMatrix(); C.mesh.setMatrixAt(i, cdum.matrix);
     }
     C.mesh.instanceMatrix.needsUpdate = true;
+    // Coin Magnet: a faint pulsing ring at the pull radius while coins are in range
+    magRing.visible = magNear;
+    if (magNear) { magRing.position.set(pl.x, pl.y + 0.08, pl.z); magRing.scale.setScalar(mag * (0.97 + 0.03 * Math.sin(t * 5))); magRing.material.opacity = 0.2 + 0.12 * Math.sin(t * 5); }
+  }
+  const magRing = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), new THREE.MeshBasicMaterial({ color: 0xffd43b, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+  magRing.rotation.x = -Math.PI / 2; magRing.visible = false; scene.add(magRing);
+
+  // Leaf Glide canopy: a little leaf umbrella over the cat while gliding (local player only)
+  const GLIDE_FALL = [0, 3.2, 2.2, 1.3];
+  const canopy = new THREE.Group();
+  { const dome = new THREE.Mesh(new THREE.LatheGeometry([[0, 0.34], [0.18, 0.32], [0.38, 0.2], [0.5, 0.04], [0.46, 0.0]].map(([r, y]) => new THREE.Vector2(r, y)), 24), toon("#7ed957", { rim: 0.3, side: THREE.DoubleSide }));
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.5, 6), toon("#8a5a2b"));
+    dome.position.y = 0.45; stem.position.y = 0.2; canopy.add(dome, stem); canopy.position.y = 1.55; canopy.visible = false; me.root.add(canopy); }
+  let canopyS = 0, gliding = false, glideT = 0;
+  function updateGlide(dt, t) {
+    const gl = P.upgrades.glide | 0;
+    canopyS += ((gliding ? 1 : 0) - canopyS) * Math.min(1, dt * 10);
+    canopy.visible = canopyS > 0.03;
+    if (!canopy.visible) return;
+    canopy.scale.setScalar(canopyS * (0.8 + 0.12 * gl));
+    canopy.rotation.set(Math.sin(t * 3) * 0.08, t * 1.5, Math.cos(t * 2.4) * 0.08);
+    if (gliding && (glideT -= dt) < 0) { glideT = 0.12; fx.emit(pl.x + (Math.random() - 0.5) * 0.7, pl.y + 1.4, pl.z + (Math.random() - 0.5) * 0.7, 0, -0.4, 0, 0.7, 0.16, "#b2f2bb", 0, -0.5); }
+  }
+
+  // Zoomies: coloured wind streaks while running; the top tier shimmers through rainbow colours
+  const SPEED_COL = ["#ffffff", "#9be7ff", "#ffe066", "#ff9ecb"];
+  let speedT = 0, speedI = 0;
+  function updateSpeedFx(dt) {
+    const lv = P.upgrades.speed | 0;
+    if (!lv || !pl.grounded || pl.speed < 4.5) return;
+    if ((speedT -= dt) > 0) return;
+    speedT = [0, 0.07, 0.045, 0.025][lv];
+    const side = (Math.random() - 0.5) * 0.6, bx = -Math.cos(pl.rot), bz = Math.sin(pl.rot);
+    fx.emit(pl.x - Math.sin(pl.rot) * 0.3 + bx * side, pl.y + 0.15 + Math.random() * 0.5, pl.z - Math.cos(pl.rot) * 0.3 + bz * side, -pl.vx * 0.25, 0.1, -pl.vz * 0.25, 0.4, 0.14 + lv * 0.04, lv === 3 ? TCOLS[speedI++ % 5] : SPEED_COL[lv], 0, -0.7);
   }
 
   // ---------- trails (local player only): glitter via the shared particle pool, paw prints as decals ----------
@@ -278,14 +323,14 @@ export async function startGame({ session, flags }) {
   if (session.watchPlayers) session.watchPlayers(onPlayers);
   // dev (?dev=1&ghost=1): a fake second player wandering the island, fed through the same onPlayers path as a real one.
   // ghostat=x,z parks it; window.__g.ghost.fixed = {x, z} does the same from a test.
-  const ghost = { key: session.uid + "_ghost00001", fixed: flags.ghostat ? { x: +flags.ghostat.split(",")[0], z: +flags.ghostat.split(",")[1] } : null };
+  const ghost = { wear: flags.ghostwear ? Object.fromEntries(flags.ghostwear.split(",").map((id) => [itemById(id)?.slot, id]).filter(([k]) => k)) : null, key: session.uid + "_ghost00001", fixed: flags.ghostat ? { x: +flags.ghostat.split(",")[0], z: +flags.ghostat.split(",")[1] } : null };
   if (flags.ghost) {
     const other = CATS.find((c) => c.id !== catCfg.id) || CATS[0];
     const tick = () => {
       const a = performance.now() / 1000 * 0.35;
       let x = -10 + 20 * Math.cos(a), z = 30 + 15 * Math.sin(a), rot = Math.atan2(-20 * Math.sin(a), 15 * Math.cos(a));
       if (ghost.fixed) { x = ghost.fixed.x; z = ghost.fixed.z; }
-      onPlayers({ [ghost.key]: { cat: other.id, x, y: heightAt(x, z), z, rotY: rot } });
+      onPlayers({ [ghost.key]: { cat: other.id, x, y: heightAt(x, z), z, rotY: rot, ...(ghost.wear ? { equipped: ghost.wear } : {}) } });
     };
     tick(); setInterval(tick, 110);
   }
@@ -348,6 +393,7 @@ export async function startGame({ session, flags }) {
   const perf = flags.debug ? createPerf(renderer) : null;
   let last = performance.now(), t = 0, stepT = 0, lastSent = 0, sentMoving = false, lastDoorCheck = 0, prevRot = 0, turnRate = 0, lastGrounded = true;
   const hasRadar = () => (P.upgrades.radar | 0) > 0;
+  let radarNear = -1;
   const radarEl = $("radar"), radarArrow = $("radarArrow"), radarDist = $("radarDist");
   const door = world.door;
 
@@ -390,17 +436,25 @@ export async function startGame({ session, flags }) {
     const jv = upgradeValue("jump", P.upgrades.jump | 0), jumpV = 8.8 * (jv === "double" ? 1.4 : jv), ground = heightAt(pl.x, pl.z);
     if (controls.takeJump()) {
       if (pl.grounded && !pl.wind) { pl.wind = 0.09; me.setCrouch(1); } // anticipation squash, then launch
-      else if (!pl.grounded && jv === "double" && !pl.usedDouble) { pl.vy = jumpV * 0.9; pl.usedDouble = true; sfx.jump2(); fx.burst(pl.x, pl.y + 0.2, pl.z, 8, 1.6, 0.5, 0.25, "#ffffff", 0); }
+      else if (!pl.grounded && jv === "double" && !pl.usedDouble) {
+        pl.vy = jumpV * 0.9; pl.usedDouble = true; sfx.jump2(); me.bounce(5);
+        fx.ring(pl.x, pl.y + 0.1, pl.z); fx.burst(pl.x, pl.y + 0.3, pl.z, 12, 2.2, 0.6, 0.26, "#ffe27a", 0); fx.burst(pl.x, pl.y + 0.3, pl.z, 8, 1.6, 0.5, 0.22, "#ff9ecb", 0); fx.dust(pl.x, pl.y, pl.z, 5, 1);
+      }
     }
     if (pl.wind) {
       pl.wind -= dt;
-      if (pl.wind <= 0) { pl.wind = 0; me.setCrouch(0); if (pl.grounded) { pl.vy = jumpV; pl.grounded = false; pl.usedDouble = false; sfx.jump(); fx.dust(pl.x, pl.y, pl.z, 4, 0.8); } }
+      if (pl.wind <= 0) { pl.wind = 0; me.setCrouch(0); if (pl.grounded) { pl.vy = jumpV; pl.grounded = false; pl.usedDouble = false; sfx.jump(); fx.dust(pl.x, pl.y, pl.z, 4 + 2 * (P.upgrades.jump | 0), 0.8); me.bounce(1.5 * (P.upgrades.jump | 0)); } }
     }
     if (pl.grounded) {
+      gliding = false;
       pl.y += (ground - pl.y) * Math.min(1, dt * 25);
       if (pl.y - ground > 0.4) pl.grounded = false; // walked off a ledge
     } else {
-      pl.vy -= 24 * dt; pl.y += pl.vy * dt;
+      pl.vy -= 24 * dt;
+      const gf = GLIDE_FALL[Math.min(3, P.upgrades.glide | 0)];
+      gliding = gf > 0 && controls.jumpHeld && pl.vy < 0 && !shop.isOpen && !pl.wind;
+      if (gliding) pl.vy = Math.max(pl.vy, -gf);
+      pl.y += pl.vy * dt;
       if (pl.y <= ground && pl.vy <= 0) { pl.y = ground; pl.vy = 0; pl.grounded = true; }
     }
     me.root.position.set(pl.x, pl.y, pl.z);
@@ -438,6 +492,7 @@ export async function startGame({ session, flags }) {
     fx.update(dt);
     updateConfetti(dt);
     updateTrails(dt, pl.speed > 1);
+    updateSpeedFx(dt); updateGlide(dt, t);
     updateRemotes(dt);
 
     if (perf) perf.mark();
@@ -458,6 +513,8 @@ export async function startGame({ session, flags }) {
         radarEl.hidden = false;
         const rel = Math.atan2(best.group.position.x - pl.x, best.group.position.z - pl.z) - controls.yaw;
         radarArrow.style.transform = `rotate(${-rel}rad)`;
+        const near = Math.round(10 * (1 - Math.min(bd, Math.min(upgradeValue("radar", lvl), 60)) / Math.min(upgradeValue("radar", lvl), 60))) / 10; // 0 far .. 1 close: stronger glow + faster ping
+        if (near !== radarNear) { radarNear = near; radarEl.style.setProperty("--near", near); }
         radarDist.textContent = Math.round(bd) + " steps";
       } else radarEl.hidden = true;
     } else radarEl.hidden = true;
@@ -504,12 +561,17 @@ export async function startGame({ session, flags }) {
   requestAnimationFrame((n) => { last = n; frame(n); });
   if (flags.camtest === "2") { camSync = true; let n = performance.now(); last = n; for (let i = 0; i < 400; i++) { n += 16.7; frame(n); } camSync = false; } // dev: run the scripted camera test at a simulated 60 fps
 
+  if (flags.wear) { // dev: &wear=hat_halo,back_fairy,... puts any items on
+    P.equipped = {};
+    for (const id of flags.wear.split(",")) { const it = itemById(id); if (it) P.equipped[it.slot] = id; }
+    applyLook(me, P.equipped, catCfg.id);
+  }
   if (flags.dress) {
     P.equipped = { hat: "hat_crown", glasses: "glasses_heart", neck: "neck_scarf" };
     applyLook(me, P.equipped, catCfg.id);
   }
   if (flags.shop) setTimeout(() => { shop.open(flags.shop === "1" ? "hats" : flags.shop); }, 600);
-  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera, ghost, finder, remotes, onPlayers, session };
+  if (flags.debug) window.__g = { pl, world, P, shop, scene, renderer, controls, camera, ghost, finder, remotes, onPlayers, session, me, applyLook };
   if (flags.debug === "2") { // dev: list the heaviest meshes
     const rows = [];
     scene.traverse((o) => { if (!o.geometry) return; const g = o.geometry, n = (g.index ? g.index.count : g.attributes.position.count) / 3 * (o.isInstancedMesh ? o.count : 1); rows.push([Math.round(n), o.type, o.castShadow ? "shadow" : "", o.material.customProgramCacheKey ? o.material.customProgramCacheKey() : o.material.type]); });

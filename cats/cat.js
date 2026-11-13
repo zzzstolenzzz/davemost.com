@@ -239,6 +239,7 @@ export function buildCat(cfg) {
       for (let i = 0; i < accUpdaters.length; i++) accUpdaters[i](t, k);
     },
     setCrouch(v) { crouch = v; },
+    bounce(k) { squashV += k; }, // extra squash-and-stretch kick (Bouncy Paws upgrade)
     look(yawRel) { headYawT = yawRel === null ? 0 : clamp(yawRel, -0.8, 0.8); },
     setPalette(p) {
       U.uBody.value.set(p ? p.body : cfg.body); U.uBelly.value.set(p ? p.belly : cfg.belly); U.uMark.value.set(p ? p.markingColor : cfg.markingColor);
