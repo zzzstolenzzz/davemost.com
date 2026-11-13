@@ -6,7 +6,7 @@ import * as THREE from "three";
 
 const H = 0.028; // cell size (m). ~9k vertices / 18k triangles.
 export const TAIL0 = [0, 0.6, -0.45], TAILD = [0, 0.6, -0.8], TAIL_SEG = 0.15, TAIL_N = 6;
-export const NOSE = [0, 0.915, 0.776], EYE = { x: 0.2, y: 1.005, rx: 0.128, ry: 0.158 };
+export const NOSE = [0, 0.953, 0.822], EYE = { x: 0.2, y: 1.045, rx: 0.115, ry: 0.092 };
 export const HEAD_PIVOT = [0, 0.8, 0.3];
 
 // name, parent index, pivot
@@ -15,7 +15,7 @@ export const BONES = [
   ["body", 0, 0, 0.52, -0.12],
   ["chest", 1, 0, 0.55, 0.12],
   ["head", 2, ...HEAD_PIVOT],
-  ["earL", 3, 0.25, 1.24, 0.34], ["earR", 3, -0.25, 1.24, 0.34],
+  ["earL", 3, 0.27, 1.22, 0.3], ["earR", 3, -0.27, 1.22, 0.3],
   ["flU", 2, 0.165, 0.45, 0.25], ["flL", 6, 0.165, 0.24, 0.27],
   ["frU", 2, -0.165, 0.45, 0.25], ["frL", 8, -0.165, 0.24, 0.27],
   ["blU", 1, 0.19, 0.45, -0.28], ["blL", 10, 0.185, 0.24, -0.27],
@@ -29,19 +29,27 @@ export const BONE = Object.fromEntries(BONES.map((b, i) => [b[0], i]));
 const P = [];
 const ell = (bone, c, r, k = 0.08, sub = false) => P.push({ t: 0, bone, c, r, k, sub, bc: c, br: Math.max(...r) });
 const cone = (bone, a, b, r1, r2, k = 0.06, sz = 1) => P.push({ t: 1, bone, a, b: [b[0], b[1], a[2] + (b[2] - a[2]) / sz], r1, r2, k, sz, sub: false, bc: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2], br: Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 2 + Math.max(r1, r2) });
-// head
-ell(3, [0, 1.0, 0.37], [0.43, 0.37, 0.37]);
-for (const s of [1, -1]) ell(3, [s * 0.2, 0.9, 0.46], [0.25, 0.21, 0.23], 0.08);
-ell(3, [0, 0.875, 0.68], [0.15, 0.105, 0.1], 0.05);
-ell(3, NOSE, [0.043, 0.03, 0.03], 0.012);
-// ears (flattened tapered capsules) with a scooped-out front
+// head: a wide, fairly flat skull; cheeks that flare below the eyes and taper to a small chin;
+// a real muzzle (two whisker pads + nose bridge + nose leather + chin); brow ridges over shallow eye sockets
+ell(3, [0, 1.04, 0.36], [0.4, 0.3, 0.36]);
+for (const s of [1, -1]) ell(3, [s * 0.21, 0.94, 0.44], [0.225, 0.165, 0.22], 0.08);
+ell(3, [0, 0.9, 0.52], [0.2, 0.13, 0.2], 0.08);
+cone(3, [0, 1.07, 0.64], [0, 0.97, 0.775], 0.085, 0.052, 0.07);
+for (const s of [1, -1]) ell(3, [s * 0.068, 0.9, 0.73], [0.1, 0.075, 0.09], 0.035);
+ell(3, [0, 0.838, 0.67], [0.075, 0.06, 0.085], 0.04);
+ell(3, NOSE, [0.041, 0.028, 0.026], 0.012);
 for (const s of [1, -1]) {
-  cone(s > 0 ? 4 : 5, [s * 0.25, 1.24, 0.34], [s * 0.345, 1.51, 0.31], 0.155, 0.05, 0.05, 0.5);
-  ell(s > 0 ? 4 : 5, [s * 0.305, 1.4, 0.43], [0.075, 0.135, 0.07], 0.03, true);
+  ell(3, [s * 0.2, 1.14, 0.6], [0.14, 0.05, 0.1], 0.06);
+  ell(3, [s * EYE.x, EYE.y, 0.755], [0.13, 0.095, 0.075], 0.05, true);
+}
+// ears: big, set on the corners of the skull, flattened, with a deep scooped front
+for (const s of [1, -1]) {
+  cone(s > 0 ? 4 : 5, [s * 0.27, 1.2, 0.3], [s * 0.4, 1.6, 0.25], 0.175, 0.045, 0.06, 0.5);
+  ell(s > 0 ? 4 : 5, [s * 0.335, 1.4, 0.4], [0.095, 0.185, 0.078], 0.03, true);
 }
 // torso
 ell(2, [0, 0.56, 0.16], [0.27, 0.26, 0.3], 0.1);
-cone(2, [0, 0.62, 0.22], [0, 0.82, 0.33], 0.23, 0.22, 0.08);
+cone(2, [0, 0.6, 0.2], [0, 0.86, 0.33], 0.21, 0.17, 0.07);
 ell(2, [0, 0.6, 0.4], [0.17, 0.2, 0.13], 0.06);
 ell(1, [0, 0.55, -0.2], [0.29, 0.27, 0.32], 0.1);
 // legs
@@ -166,7 +174,7 @@ export function catGeometry() {
   // whiskers: thin tapered tubes, rigid to the head (aKind = 1 so the fur shader paints them white)
   const P3 = Array.from(pos), N3 = Array.from(nor), SI = Array.from(si), SW = Array.from(sw), kind = new Array(n).fill(0);
   for (const s of [1, -1]) for (let w = 0; w < 3; w++) {
-    const base = [s * 0.3, 0.862 + w * 0.03, 0.6], dir = [s * 0.94, (w - 1) * 0.3 + 0.08, 0.2], len = 0.3 - Math.abs(w - 1) * 0.03, SEG = 5, RAD = 4, v0 = P3.length / 3;
+    const base = [s * 0.125, 0.885 + w * 0.022, 0.745], dir = [s * 0.95, (w - 1) * 0.28 + 0.05, -0.05], len = 0.36 - Math.abs(w - 1) * 0.04, SEG = 5, RAD = 4, v0 = P3.length / 3;
     for (let a = 0; a <= SEG; a++) {
       const t = a / SEG, r = 0.008 * (1 - t * 0.85), px = base[0] + dir[0] * len * t, py = base[1] + dir[1] * len * t - 0.06 * t * t, pz = base[2] + dir[2] * len * t - 0.05 * t * t;
       for (let b = 0; b < RAD; b++) {
@@ -203,15 +211,15 @@ export function eyeGeometry() {
     let z = 1.0;
     for (let i = 0; i < 40; i++) z -= sdf(s * EYE.x, EYE.y, z);
     const g = grad(s * EYE.x, EYE.y, z), n0 = new THREE.Vector3(g[0], g[1], g[2]);
-    n0.lerp(new THREE.Vector3(0, 0, 1), 0.35).normalize(); // face a little more forward than the skull does
+    n0.lerp(new THREE.Vector3(0, 0, 1), 0.3).normalize(); // face a little more forward than the skull does
     const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), n0).normalize(), up = new THREE.Vector3().crossVectors(n0, right);
     const c0 = new THREE.Vector3(s * EYE.x, EYE.y, z), p = new THREE.Vector3(), v0 = pos.length / 3;
     const put = (u, v) => {
       p.copy(c0).addScaledVector(right, u * EYE.rx).addScaledVector(up, v * EYE.ry).addScaledVector(n0, 0.2);
       for (let i = 0; i < 30; i++) p.addScaledVector(n0, -sdf(p.x, p.y, p.z));
-      const gg = grad(p.x, p.y, p.z), r2 = Math.min(1, u * u + v * v), bulge = 0.004 + 0.03 * Math.sqrt(1 - r2 * 0.96);
+      const gg = grad(p.x, p.y, p.z), r2 = Math.min(1, u * u + v * v), bulge = 0.003 + 0.016 * Math.sqrt(1 - r2 * 0.96);
       pos.push(p.x + gg[0] * bulge - HEAD_PIVOT[0], p.y + gg[1] * bulge - HEAD_PIVOT[1], p.z + gg[2] * bulge - HEAD_PIVOT[2]);
-      nor.push(gg[0], gg[1], gg[2]); uv.push(u, v);
+      nor.push(gg[0], gg[1], gg[2]); uv.push(u, v, s);
     };
     put(0, 0);
     for (let r = 1; r <= RINGS; r++) for (let a = 0; a < SEGS; a++) { const an = (a / SEGS) * Math.PI * 2, rr = r / RINGS; put(Math.cos(an) * rr, Math.sin(an) * rr); }
@@ -225,7 +233,7 @@ export function eyeGeometry() {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute("normal", new THREE.Float32BufferAttribute(nor, 3));
-  geo.setAttribute("aEye", new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute("aEye", new THREE.Float32BufferAttribute(uv, 3));
   geo.setIndex(idx);
   geo.userData.shared = true;
   eyeCached = geo;

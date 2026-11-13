@@ -24,7 +24,7 @@ const FUR_COLOR = `#include <color_fragment>
     // cream areas: tummy, bib, muzzle, socks, tail tip
     float belly = smoothstep(0.46, 0.36, p.y + nz * 0.04) * smoothstep(0.17, 0.08, ax) * step(-0.52, p.z);
     float bib = blob(p, vec3(0.0, 0.64, 0.42), vec3(0.17, 0.22, 0.2), nz * 0.3);
-    float muzzle = blob(p, vec3(0.0, 0.855, 0.66), vec3(0.2, 0.125, 0.22), nz * 0.2);
+    float muzzle = max(blob(p, vec3(0.0, 0.885, 0.7), vec3(0.185, 0.11, 0.16), nz * 0.18), blob(p, vec3(0.0, 0.8, 0.6), vec3(0.14, 0.1, 0.16), nz * 0.18));
     float socks = smoothstep(0.19, 0.165, p.y + nz * 0.03);
     float tip = smoothstep(0.82, 0.88, tailT + nz * 0.07) * tailM;
     float cream = max(max(belly, bib), max(muzzle, max(socks, tip)));
@@ -36,15 +36,17 @@ const FUR_COLOR = `#include <color_fragment>
       float leg = smoothstep(0.2, 0.23, p.y) * (1.0 - smoothstep(0.4, 0.46, p.y)) * smoothstep(0.12, 0.2, ax);
       mark = max(mark, smoothstep(0.3, 0.6, sin(p.y * 62.0 + nz * 2.5 + 1.0)) * leg);
       mark = max(mark, smoothstep(0.15, 0.45, sin(tailT * 27.0 + 0.5)) * tailM);
-      float fh = smoothstep(1.16, 1.22, p.y - (p.z - 0.6) * 0.5) * headM * (1.0 - smoothstep(0.17, 0.2, ax)) * smoothstep(0.02, 0.2, p.z);
-      mark = max(mark, smoothstep(0.5, 0.75, cos(ax * 54.0 + nz * 1.5)) * fh);
-      float ck = headM * smoothstep(0.3, 0.37, ax) * smoothstep(0.84, 0.88, p.y) * (1.0 - smoothstep(1.02, 1.06, p.y)) * (1.0 - smoothstep(0.5, 0.62, p.z));
-      mark = max(mark, smoothstep(0.35, 0.65, sin((p.y + p.z * 0.25) * 66.0 + 0.8)) * ck);
+      // the tabby "M": two lines fanning up from the brows plus a centre pair, then stripes running back over the skull
+      float fh = smoothstep(1.13, 1.18, p.y - (p.z - 0.62) * 0.35) * headM * (1.0 - smoothstep(0.23, 0.27, ax)) * smoothstep(0.0, 0.18, p.z);
+      float mx = ax - max(p.y - 1.14, 0.0) * 0.28 * step(0.55, p.z);
+      mark = max(mark, smoothstep(0.45, 0.72, cos(mx * 50.0 + nz * 1.2)) * fh);
+      float ck = headM * smoothstep(0.29, 0.35, ax) * smoothstep(0.86, 0.9, p.y) * (1.0 - smoothstep(1.06, 1.1, p.y)) * (1.0 - smoothstep(0.52, 0.62, p.z));
+      mark = max(mark, smoothstep(0.4, 0.68, sin((p.y - ax * 0.35 + p.z * 0.2) * 62.0 + 2.2)) * ck);
     } else if (uMarkType < 1.5) {     // patches: big soft-edged blobs, one over an eye and ear, coloured tail
       float e = nz * 0.3;
-      mark = blob(p, vec3(0.24, 1.13, 0.42), vec3(0.22, 0.25, 0.32), e);
-      mark = max(mark, blob(p, vec3(0.3, 1.42, 0.3), vec3(0.2, 0.26, 0.2), e * 0.5));
-      mark = max(mark, blob(p, vec3(-0.33, 1.5, 0.3), vec3(0.14, 0.17, 0.14), e));
+      mark = blob(p, vec3(0.25, 1.13, 0.45), vec3(0.2, 0.2, 0.36), e);
+      mark = max(mark, blob(p, vec3(0.34, 1.44, 0.28), vec3(0.2, 0.3, 0.2), e * 0.5));
+      mark = max(mark, blob(p, vec3(-0.39, 1.58, 0.26), vec3(0.14, 0.17, 0.14), e));
       mark = max(mark, blob(p, vec3(0.1, 0.8, -0.08), vec3(0.27, 0.2, 0.3), e));
       mark = max(mark, blob(p, vec3(-0.27, 0.55, -0.4), vec3(0.2, 0.24, 0.24), e));
       mark = max(mark, blob(p, vec3(-0.3, 0.6, 0.15), vec3(0.12, 0.16, 0.16), e));
@@ -56,20 +58,20 @@ const FUR_COLOR = `#include <color_fragment>
     col = mix(col, uBelly, cream);
     if (uRainbow > 0.5) col = mix(col, hue(tailT * 1.15 + 0.02) * 0.8 + 0.2, tailM);
     // inner ears
-    vec3 q = vec3(ax, p.y, p.z), ea = vec3(0.25, 1.24, 0.34), eb = vec3(0.345, 1.51, 0.31);
+    vec3 q = vec3(ax, p.y, p.z), ea = vec3(0.27, 1.2, 0.3), eb = vec3(0.4, 1.6, 0.25);
     float et = clamp(dot(q - ea, eb - ea) / dot(eb - ea, eb - ea), 0.0, 1.0);
     float ed = length((q - (ea + (eb - ea) * et)).xy);
-    float inner = (1.0 - smoothstep(0.6, 1.0, ed / mix(0.105, 0.03, et))) * smoothstep(0.1, 0.4, rn.z) * smoothstep(1.27, 1.33, p.y) * smoothstep(0.34, 0.38, p.z) * headM;
-    col = mix(col, uInner * mix(0.78, 1.05, smoothstep(0.42, 0.36, p.z)), inner);
+    float inner = (1.0 - smoothstep(0.6, 1.0, ed / mix(0.12, 0.03, et))) * smoothstep(0.1, 0.4, rn.z) * smoothstep(1.27, 1.34, p.y) * smoothstep(0.27, 0.31, p.z) * headM;
+    col = mix(col, uInner * mix(0.66, 1.05, smoothstep(0.3, 0.38, p.z)), inner);
     // nose, mouth, blush
-    float nose = 1.0 - smoothstep(0.85, 1.05, length((p - ${v3(NOSE)}) / vec3(0.056, 0.04, 0.05)));
-    vec2 m = vec2(ax, p.y - ${(NOSE[1] - 0.075).toFixed(3)});
-    float md = m.y > 0.0 ? min(length(vec2(ax, max(m.y - 0.045, 0.0))), length(m - vec2(0.094, 0.0))) : abs(length(m - vec2(0.047, 0.0)) - 0.047);
-    float mouth = (1.0 - smoothstep(0.0065, 0.011, md)) * step(0.55, p.z);
+    float nose = 1.0 - smoothstep(0.85, 1.05, length((p - ${v3(NOSE)}) / vec3(0.05, 0.034, 0.04)));
+    vec2 m = vec2(ax, p.y - ${(NOSE[1] - 0.085).toFixed(3)});
+    float md = m.y > 0.0 ? min(length(vec2(ax, max(m.y - 0.055, 0.0))), length(m - vec2(0.08, 0.0))) : abs(length(m - vec2(0.04, 0.0)) - 0.04);
+    float mouth = (1.0 - smoothstep(0.005, 0.009, md)) * step(0.62, p.z);
     col = mix(col, vec3(0.33, 0.18, 0.2), mouth);
     col = mix(col, uNose, nose);
-    float blush = (1.0 - smoothstep(0.2, 1.0, length(vec2(ax - 0.3, p.y - 0.865) / vec2(0.1, 0.06)))) * step(0.4, p.z);
-    col = mix(col, vec3(1.0, 0.52, 0.56), blush * 0.34);
+    float blush = (1.0 - smoothstep(0.2, 1.0, length(vec2(ax - 0.3, p.y - 0.92) / vec2(0.09, 0.055)))) * step(0.4, p.z);
+    col = mix(col, vec3(1.0, 0.52, 0.56), blush * 0.1);
     // soft grounding: darker tummy / under the chin, a hint of fur grain
     col *= mix(0.8, 1.0, smoothstep(0.03, 0.5, p.y));
     col *= 1.0 - 0.2 * smoothstep(0.52, 0.7, p.y) * (1.0 - headM) * smoothstep(0.12, 0.3, p.z);
@@ -107,27 +109,32 @@ function eyeMaterial(U) {
   const m = new THREE.MeshToonMaterial({ color: 0xffffff, gradientMap: ramp });
   m.onBeforeCompile = (s) => {
     Object.assign(s.uniforms, U);
-    s.vertexShader = "attribute vec2 aEye; varying vec2 vEye;\n" + s.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvEye = aEye;");
-    s.fragmentShader = "uniform vec3 uIris, uLid; uniform float uBlink; uniform vec2 uGaze; varying vec2 vEye;\n" + s.fragmentShader.replace("#include <color_fragment>", `
-      vec2 e = vEye; float r = length(e);
-      vec2 q = e - uGaze; float ir = length(q);
-      vec3 iris = mix(uIris * 1.3 + 0.1, uIris * 0.42, smoothstep(-0.75, 0.7, q.y));
-      iris = mix(iris, uIris * 1.5 + 0.22, smoothstep(0.42, 0.72, ir) * smoothstep(-0.1, -0.75, q.y) * 0.7);   // bright lower crescent
-      iris = mix(iris, uIris * 0.3, smoothstep(0.66, 0.9, ir));
-      float pd = length(q / vec2(0.43, 0.6));
-      vec3 pupil = mix(vec3(0.22, 0.13, 0.27), vec3(0.06, 0.03, 0.1), smoothstep(-0.6, 0.2, q.y));
-      vec3 col = mix(iris, pupil, 1.0 - smoothstep(0.9, 1.0, pd));
-      float rimIn = 0.86 - 0.1 * smoothstep(-0.3, 0.9, e.y);
-      col = mix(col, vec3(0.16, 0.09, 0.14), smoothstep(rimIn - 0.04, rimIn + 0.02, r));
-      col = mix(col, vec3(1.0), 1.0 - smoothstep(0.2, 0.235, length(e - vec2(-0.26, 0.36))));
-      col = mix(col, vec3(1.0), (1.0 - smoothstep(0.075, 0.105, length(e - vec2(0.3, -0.4)))) * 0.92);
-      float top = mix(1.4, -0.34, uBlink) - 0.3 * e.x * e.x, bot = mix(-1.4, -0.52, uBlink) + 0.22 * e.x * e.x;
-      float lid = max(smoothstep(-0.02, 0.02, e.y - top), smoothstep(-0.02, 0.02, bot - e.y));
-      float lash = (1.0 - smoothstep(0.03, 0.1, abs(e.y - top))) * step(0.03, uBlink);
-      diffuseColor.rgb = mix(col * 0.5, mix(uLid, vec3(0.2, 0.11, 0.15), lash), lid);
-      totalEmissiveRadiance += col * 0.6 * (1.0 - lid);`);
+    s.vertexShader = "attribute vec3 aEye; varying vec3 vEye;\n" + s.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvEye = aEye;");
+    s.fragmentShader = "uniform vec3 uIris, uLid, uLid2; uniform float uBlink; uniform vec2 uGaze; varying vec3 vEye;\n" + s.fragmentShader.replace("#include <color_fragment>", `
+      float sd = vEye.z;                                   // +1 = the cat's +x eye
+      vec2 e = vec2(vEye.x * 0.972 + vEye.y * 0.235 * sd * 0.8, vEye.y * 0.972 - vEye.x * 0.235 * sd * 1.25);   // tilt: outer corner up
+      float xo = e.x * sd;                                 // + toward the outer corner
+      float w = clamp(1.0 - e.x * e.x * 1.04, 0.0, 1.0);
+      float topO = 0.9 * pow(w, 0.55) * (1.0 + 0.08 * xo), bot = -0.74 * pow(w, 0.8) * (1.0 - 0.18 * xo);
+      float top = mix(topO, bot + 0.04, uBlink);
+      vec2 q = vec2(e.x * 1.25, e.y) - uGaze; float ir = length(q);
+      vec3 iris = mix(uIris * 1.25 + 0.08, uIris * 0.5, smoothstep(-0.7, 0.8, q.y));
+      iris = mix(iris, uIris * 1.5 + 0.2, smoothstep(0.35, 0.7, ir) * smoothstep(0.0, -0.7, q.y) * 0.65);   // bright lower crescent
+      iris = mix(iris, uIris * 0.28, smoothstep(0.78, 1.0, ir));                                         // limbal ring, dark corners
+      float pd = length(q / vec2(0.34, 0.7));
+      vec3 pupil = mix(vec3(0.16, 0.1, 0.2), vec3(0.04, 0.02, 0.07), smoothstep(-0.6, 0.2, q.y));
+      vec3 col = mix(iris, pupil, 1.0 - smoothstep(0.86, 1.0, pd));
+      col *= mix(1.0, 0.55, smoothstep(0.35, 0.0, top - e.y));                                           // shade under the upper lid
+      col = mix(col, vec3(1.0), 1.0 - smoothstep(0.17, 0.21, length(vec2(e.x * 1.25, e.y) - vec2(-0.3, 0.33))));
+      col = mix(col, vec3(1.0), (1.0 - smoothstep(0.06, 0.09, length(vec2(e.x * 1.25, e.y) - vec2(0.3, -0.3)))) * 0.9);
+      float lid = max(smoothstep(-0.03, 0.03, e.y - top), smoothstep(-0.03, 0.03, bot - e.y));
+      float line = max((1.0 - smoothstep(0.0, 0.16, abs(e.y - top))) * w, (1.0 - smoothstep(0.0, 0.07, abs(e.y - bot))) * 0.75 * smoothstep(0.0, 0.2, w));
+      vec3 lidC = mix(sd > 0.0 ? uLid2 : uLid, vec3(0.17, 0.1, 0.13), line);
+      col = mix(col, vec3(0.13, 0.07, 0.11), line * (1.0 - lid));
+      diffuseColor.rgb = mix(col * 0.5, lidC, lid);
+      totalEmissiveRadiance += col * 0.55 * (1.0 - lid);`);
   };
-  m.customProgramCacheKey = () => "cateye";
+  m.customProgramCacheKey = () => "cateye2";
   return m;
 }
 
@@ -144,7 +151,7 @@ export function buildCat(cfg) {
     uMarkType: { value: cfg.markings === "stripes" ? 0 : cfg.markings === "patches" ? 1 : 2 }, uRainbow: { value: 0 }, uNoise: { value: noiseTex },
     uLine: { value: new THREE.Color() },
   };
-  const EU = { uIris: { value: new THREE.Color(cfg.eyes) }, uLid: U.uBody, uBlink: { value: 0 }, uGaze: { value: new THREE.Vector2() } };
+  const EU = { uIris: { value: new THREE.Color(cfg.eyes) }, uLid: U.uBody, uLid2: cfg.markings === "patches" ? U.uMark : U.uBody, uBlink: { value: 0 }, uGaze: { value: new THREE.Vector2() } };
   const geo = catGeometry();
   const mesh = new THREE.SkinnedMesh(geo, furMaterial(U));
   mesh.add(bones[0]);
@@ -167,8 +174,8 @@ export function buildCat(cfg) {
 
   // mounts for shop accessories
   const mounts = { hat: new THREE.Group(), glasses: new THREE.Group(), neck: new THREE.Group(), back: new THREE.Group() };
-  mounts.hat.position.set(0, 1.335 - HEAD_PIVOT[1], 0.36 - HEAD_PIVOT[2]); head.add(mounts.hat);
-  mounts.glasses.position.set(0, 1.0 - HEAD_PIVOT[1], 0.69 - HEAD_PIVOT[2]); mounts.glasses.scale.setScalar(1.22); head.add(mounts.glasses);
+  mounts.hat.position.set(0, 1.3 - HEAD_PIVOT[1], 0.36 - HEAD_PIVOT[2]); mounts.hat.scale.setScalar(0.92); head.add(mounts.hat);
+  mounts.glasses.position.set(0, 1.04 - HEAD_PIVOT[1], 0.7 - HEAD_PIVOT[2]); mounts.glasses.scale.setScalar(1.14); head.add(mounts.glasses);
   mounts.neck.position.set(0, 0.69 - BONES[BONE.chest][3], 0.27 - BONES[BONE.chest][4]); chest.add(mounts.neck);
   mounts.back.position.set(0, 0.85 - BONES[BONE.body][3], 0.1 - BONES[BONE.body][4]); body.add(mounts.back);
 
@@ -209,7 +216,7 @@ export function buildCat(cfg) {
       // head: glance toward things of interest (set via look()), gentle idle tilt
       headYaw += (headYawT - headYaw) * Math.min(1, dt * 7);
       head.rotation.set(Math.sin(t * 1.3) * 0.025 - air * 0.14 - Math.cos(phase * 2) * 0.03 * k * g, headYaw + lean * 0.5, Math.sin(t * 0.7) * 0.035 * (1 - k) - headYaw * 0.12);
-      EU.uGaze.value.set(clamp((headYawT - headYaw) * 0.5 + headYaw * 0.12, -0.14, 0.14), -air * 0.05);
+      EU.uGaze.value.set(clamp((headYawT - headYaw) * 0.6 + headYaw * 0.15, -0.2, 0.2), -air * 0.06);
       blink -= dt;
       if (blink < 0) { blinkT = 0; blink = 2.2 + Math.random() * 3.5; }
       let bl = 0;
