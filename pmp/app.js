@@ -32,6 +32,24 @@ const pct = (a, b) => (b ? Math.round((100 * a) / b) : 0);
 const LS = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const LSset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 const letter = (i) => String.fromCharCode(65 + i);
+// Short AI summary + original explanation (collapsed when a summary exists). picked = Set of choice indexes the user chose.
+function explainBody(q, picked) {
+  const orig = [q.explain && h("p", { class: "etext" }, q.explain), imgs(q.eImages)];
+  const a = q.ai;
+  if (!a) return orig;
+  const wrong = Object.keys(a.wrong || {}).sort();
+  return [
+    h("div", { class: "ai" },
+      h("div", { class: "ai-row" }, h("span", { class: "ai-label" }, "Why"), h("span", { class: "ai-text" }, a.why)),
+      wrong.length > 0 && h("div", { class: "ai-sec" }, h("p", { class: "ai-label" }, "Why not"),
+        wrong.map((L) => h("div", { class: "ai-row ai-wrong" + (picked && picked.has(L.charCodeAt(0) - 65) ? " mine" : "") },
+          h("span", { class: "ai-badge" }, L), h("span", { class: "ai-text" }, a.wrong[L])))),
+      a.more && a.more.length > 0 && h("ul", { class: "ai-more" }, a.more.map((m) => h("li", {}, m))),
+      a.tip && h("div", { class: "ai-tip" }, h("span", { class: "ai-label" }, "Remember"), h("span", { class: "ai-text" }, a.tip)),
+      h("p", { class: "ai-cap" }, "AI summary")),
+    h("details", { class: "orig" }, h("summary", {}, "Original explanation"), orig),
+  ];
+}
 const topBar = (title, back = "Home") => h("header", { class: "bar" }, h("button", { class: "link", onclick: home }, "< " + back), h("h1", {}, title));
 
 function shuffle(a) {
@@ -194,7 +212,7 @@ function question() {
     h("div", { class: "choices" }, choices),
     multi && !done && h("button", { class: "btn wide", disabled: !run.picked.size, onclick: submit }, "Submit"),
     done && h("section", { class: "card explain" }, h("p", { class: run.ok ? "ok-text" : "bad-text" }, run.ok ? "Correct" : "Not quite"),
-      meta(q), q.explain && h("p", { class: "etext" }, q.explain), imgs(q.eImages), flagBtn()),
+      meta(q), explainBody(q, run.picked), flagBtn()),
     done && h("div", { class: "sticky" }, h("button", { class: "btn wide", onclick: () => {
       if (last) return finish();
       run.i++; run.picked = new Set(); run.done = false; question();
@@ -223,7 +241,7 @@ function finish() {
       return h("details", {}, h("summary", {}, q.q),
         meta(q), h("p", { class: "qtext small" }, q.q), imgs(q.qImages),
         h("p", {}, h("strong", {}, "Correct: "), q.answer.map((i) => letter(i) + ". " + q.choices[i]).join("\n")),
-        q.explain && h("p", { class: "etext" }, q.explain), imgs(q.eImages));
+        explainBody(q, null));
     })) : h("p", { class: "center ok-text" }, "No misses. Nice."),
     h("div", { class: "row" },
       run.missed.length > 0 && h("button", { class: "btn", onclick: () => start("redo", 0, shuffle(run.missed)) }, "Redo missed"),
@@ -284,6 +302,19 @@ async function statsView() {
 }
 
 // ---------- import ----------
+function cleanAi(a, nChoices) {
+  const str = (v) => typeof v === "string" && v.trim();
+  if (!a || typeof a !== "object" || Array.isArray(a) || !str(a.why)) return null;
+  const out = { why: a.why };
+  if (a.wrong && typeof a.wrong === "object" && !Array.isArray(a.wrong)) {
+    const w = {};
+    for (const [L, t] of Object.entries(a.wrong)) if (/^[A-H]$/.test(L) && L.charCodeAt(0) - 65 < nChoices && str(t)) w[L] = t;
+    if (Object.keys(w).length) out.wrong = w;
+  }
+  if (Array.isArray(a.more)) { const m = a.more.filter(str).slice(0, 6); if (m.length) out.more = m; }
+  if (str(a.tip)) out.tip = a.tip;
+  return out;
+}
 function validate(text) {
   let data;
   try { data = JSON.parse(text); } catch (e) { return { error: "Not valid JSON: " + e.message }; }
@@ -316,6 +347,8 @@ function validate(text) {
       if (typeof x.domain === "string" && x.domain) good[id].domain = x.domain;
       if (typeof x.src === "string" && x.src) good[id].src = x.src;
       if (typeof x.sub === "string" && x.sub) good[id].sub = x.sub;
+      const ai = cleanAi(x.ai, x.choices.length);
+      if (ai) good[id].ai = ai;
       for (const f of ["qImages", "eImages"]) if (Array.isArray(x[f])) good[id][f] = x[f].filter((u) => typeof u === "string" && u.startsWith("https://"));
     }
   }
