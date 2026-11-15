@@ -136,3 +136,4 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 [hidden] { display: none !important; }
+.brief { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 8px; }

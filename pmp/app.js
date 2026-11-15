@@ -279,6 +279,43 @@ function streak(sessions) {
   while (days.has(d)) { c++; d--; }
   return c;
 }
+// Compact plain-text study brief for pasting into a Claude chat (token-cheap).
+function studyBrief() {
+  const d = new Date(), p2 = (n) => String(n).padStart(2, "0");
+  const cut = (t, n) => { t = String(t).replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n) + "..." : t; };
+  const ans = (q) => q.answer.map((i) => letter(i) + ". " + cut(q.choices[i], 50)).join("; ");
+  const line = (id, tail = "") => "- [" + id + "] " + cut(Q[id].q, 110) + " -> " + ans(Q[id]) + tail;
+  const seenIds = Object.keys(Q).filter((id) => ST[id]?.seen);
+  const right = seenIds.reduce((a, id) => a + ST[id].right, 0), answered = seenIds.reduce((a, id) => a + ST[id].seen, 0);
+  const out = ["PMP STUDY BRIEF " + d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()),
+    "Overall: " + pct(right, answered) + "% (" + right + "/" + answered + " answers) | bank seen: " + seenIds.length + "/" + Object.keys(Q).length];
+  const last5 = [...(SESS || [])].sort((a, b) => a.t - b.t).slice(-5);
+  if (last5.length) out.push("Recent sessions: " + last5.map((s) => pct(s.correct, s.n) + "%").join(", "));
+  const subs = {};
+  for (const id of seenIds) if (Q[id].sub) { const x = (subs[Q[id].sub] ||= { sub: Q[id].sub, dom: Q[id].domain || "General", r: 0, n: 0 }); x.r += ST[id].right; x.n += ST[id].seen; }
+  const weak = Object.values(subs).filter((x) => x.n >= 3).sort((a, b) => pct(a.r, a.n) - pct(b.r, b.n) || b.n - a.n).slice(0, 8);
+  if (weak.length) out.push("Weakest sub-topics (min 3 answers):", ...weak.map((x) => "- " + x.sub + " (" + x.dom + "): " + pct(x.r, x.n) + "% of " + x.n));
+  const miss = seenIds.filter((id) => ST[id].seen - ST[id].right > 0)
+    .sort((a, b) => (ST[b].seen - ST[b].right) - (ST[a].seen - ST[a].right) || (ST[b].lastRight === false) - (ST[a].lastRight === false)).slice(0, 12);
+  if (miss.length) out.push("Keep missing:", ...miss.map((id) => line(id, " (missed " + (ST[id].seen - ST[id].right) + " of " + ST[id].seen + ")")));
+  const flagged = Object.keys(Q).filter((id) => ST[id]?.flag).slice(0, 10);
+  if (flagged.length) out.push("Flagged:", ...flagged.map((id) => line(id)));
+  return out.join("\n");
+}
+function briefCard() {
+  const text = studyBrief(), note = h("p", { class: "muted small" });
+  const fallback = () => {
+    const ta = h("textarea", { rows: "10", readonly: true, "aria-label": "Study brief" }, text);
+    ta.addEventListener("focus", () => ta.select());
+    note.replaceChildren("Select all and copy."); note.after(ta);
+  };
+  return h("section", { class: "card" }, h("h2", {}, "Study brief"),
+    h("button", { class: "btn wide", onclick: () => {
+      if (!navigator.clipboard) return fallback();
+      navigator.clipboard.writeText(text).then(() => note.replaceChildren("Copied. Paste it into Claude."), fallback);
+    } }, "Export study brief"),
+    note, h("details", {}, h("summary", {}, "Preview"), h("pre", { class: "brief small" }, text)));
+}
 async function statsView() {
   show("stats", topBar("Stats"), h("p", { class: "muted center" }, "Loading..."));
   try { SESS = await store.loadSessions(); } catch (e) { return show("stats", topBar("Stats"), h("p", { class: "bad-text center" }, "Could not load: " + e.message)); }
@@ -293,7 +330,7 @@ async function statsView() {
   }
   const total = Object.keys(Q).length;
   const stat = (v, l) => h("div", { class: "stat" }, h("div", { class: "num" }, String(v)), h("div", { class: "muted" }, l));
-  show("stats", topBar("Stats"),
+  show("stats", topBar("Stats"), briefCard(),
     h("section", { class: "card" }, h("h2", {}, "Score per session"),
       sessions.length ? chart(sessions) : h("p", { class: "muted" }, "No sessions yet. Finish a quiz to see your trend."),
       sessions.length ? h("p", { class: "muted small" }, sessions.length === 1 ? "One session so far." : "Dots: each session. Line: average of last 5.") : null),
