@@ -22,9 +22,12 @@ async function boot() {
     try { net = await import("./net.js"); }
     catch (e) { return lock({ note: "Couldn't reach the game server. Check the internet and try again." }); }
     // If Firebase auth is slow to answer, show the locked screen; it reloads by itself once auth reports a user.
+    // Coming back from Google: finish the redirect first so the locked screen doesn't flash.
+    if (net.redirectPending()) $("loading").querySelector("p").textContent = "Signing in…";
+    const redirectErr = await net.redirectResult;
     user = await new Promise((res) => { net.watchAuth(res); setTimeout(() => res(null), 6000); });
     net.watchAuth((u) => { if ((u && u.uid) !== (user && user.uid)) location.reload(); });
-    if (!user) return lock({});
+    if (!user) return lock({ note: redirectErr ? signInMessage(redirectErr) : "", retry: !!redirectErr });
     if (!ALLOWED_UIDS.includes(user.uid)) return lock({ uid: user.uid });
     try { saved = await net.loadProgress(user.uid); } catch (e) { saved = {}; }
   }
@@ -81,16 +84,32 @@ async function boot() {
   }
 }
 
-function lock({ uid, note }) {
+// Kid-friendly line, with the error code in small text for a parent.
+function signInMessage(err) {
+  const code = err.code || "unknown";
+  const storage = /web-storage|operation-not-supported|internal-error|network/.test(code);
+  return { text: storage ? "Sign-in is blocked here. Open davemost.com/cats in Safari and sign in there." : "Sign-in didn't finish. Tap Sign in to try again.", code };
+}
+
+function lock({ uid, note, retry }) {
   show("locked");
-  $("locked-note").textContent = note || "";
+  const n = $("locked-note");
+  n.textContent = "";
+  if (note && note.text) { n.append(note.text, " "); const s = document.createElement("small"); s.textContent = "(" + note.code + ")"; n.append(s); }
+  else n.textContent = note || "";
   $("uid-box").hidden = !uid;
-  $("signin").hidden = !!uid || !!note;
+  $("signin").hidden = !!uid || (!!note && !retry);
+  $("signin").textContent = retry ? "Try again" : "Sign in with Google";
   $("signout").hidden = !uid;
   if (uid) $("my-uid").textContent = uid;
   $("signin").onclick = async () => {
     const net = await import("./net.js");
-    net.signIn().catch((err) => { if (!/popup-closed|cancelled/.test(err.code || "")) $("locked-note").textContent = "Couldn't sign in: " + err.message; });
+    $("locked-note").textContent = "Signing in…";
+    net.signIn().catch((err) => {
+      $("locked-note").textContent = "";
+      if (err.code === "auth/popup-closed-by-user") return;
+      lock({ note: signInMessage(err), retry: true });
+    });
   };
   $("signout").onclick = async () => (await import("./net.js")).logOut();
   $("copy-uid").onclick = async () => {

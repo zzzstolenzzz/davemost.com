@@ -1,18 +1,41 @@
 // Firebase glue. Same project + SDK version as chess. Only imported in real mode (never with ?dev=1).
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, get, set, update, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
+const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence], popupRedirectResolver: browserPopupRedirectResolver });
+
+const PENDING = "cats.signin.pending";
+const store = (fn) => { try { return fn(sessionStorage); } catch { return null; } };
+export const redirectPending = () => store((s) => s.getItem(PENDING)) === "1";
+
+// iPhone/iPad (iPadOS reports as Mac) and installed home-screen apps can't use popups reliably.
+export function needsRedirect(nav = navigator, standaloneMq = () => matchMedia("(display-mode: standalone)").matches) {
+  const ua = nav.userAgent || "";
+  const ios = /iPad|iPhone|iPod/.test(ua) || (nav.maxTouchPoints > 1 && /Macintosh/.test(ua));
+  let standalone = nav.standalone === true;
+  try { standalone = standalone || standaloneMq(); } catch {}
+  return ios || standalone;
+}
+
+// Resolves to null, or the error from coming back from Google. Await it before trusting the auth state.
+export const redirectResult = getRedirectResult(auth).then(() => null, (e) => e).then((e) => { store((s) => s.removeItem(PENDING)); return e; });
 
 export const watchAuth = (cb) => onAuthStateChanged(auth, cb);
-export function signIn() {
+function goRedirect(provider) {
+  store((s) => s.setItem(PENDING, "1"));
+  return signInWithRedirect(auth, provider).catch((e) => { store((s) => s.removeItem(PENDING)); throw e; });
+}
+const POPUP_FALLBACK = ["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported", "auth/cancelled-popup-request"];
+export async function signIn() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
-  return signInWithPopup(auth, provider);
+  if (needsRedirect()) return goRedirect(provider);
+  try { return await signInWithPopup(auth, provider); }
+  catch (e) { if (POPUP_FALLBACK.includes(e.code)) return goRedirect(provider); throw e; }
 }
 export const logOut = () => signOut(auth);
 

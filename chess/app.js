@@ -1,7 +1,7 @@
 import { Chess } from "https://cdn.jsdelivr.net/npm/chess.js@1.4.0/dist/esm/chess.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { firebaseConfig, PLAYERS } from "./config.js";
 
 const SVGNS = "http://www.w3.org/2000/svg";
@@ -792,18 +792,59 @@ function fidget() {
 
 // ---------- start up ----------
 
+const PENDING = "chess.signin.pending";
+const ssGuard = (fn) => { try { return fn(sessionStorage); } catch { return null; } };
+
+// iPhone/iPad (iPadOS reports as Mac) and installed home-screen apps can't use popups reliably.
+function needsRedirect(nav = navigator, standaloneMq = () => matchMedia("(display-mode: standalone)").matches) {
+  const ua = nav.userAgent || "";
+  const ios = /iPad|iPhone|iPod/.test(ua) || (nav.maxTouchPoints > 1 && /Macintosh/.test(ua));
+  let standalone = nav.standalone === true;
+  try { standalone = standalone || standaloneMq(); } catch {}
+  return ios || standalone;
+}
+
+// Kid-friendly line, with the error code in small text for a parent.
+function showSignInError(err) {
+  const code = err.code || "unknown";
+  const storage = /web-storage|operation-not-supported|internal-error|network/.test(code);
+  const note = $("signin-note");
+  note.textContent = storage ? "Sign-in is blocked here. Open davemost.com/chess in Safari and sign in there. " : "Sign-in didn't finish. Tap Try again. ";
+  const s = document.createElement("small");
+  s.textContent = `(${code})`;
+  note.append(s);
+  $("signin").textContent = "Try again";
+}
+
+function goRedirect(provider) {
+  ssGuard((s) => s.setItem(PENDING, "1"));
+  return signInWithRedirect(auth, provider).catch((e) => { ssGuard((s) => s.removeItem(PENDING)); throw e; });
+}
+
+async function signIn() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  $("signin-note").textContent = "Signing in…";
+  try {
+    if (needsRedirect()) await goRedirect(provider);
+    else {
+      try { await signInWithPopup(auth, provider); }
+      catch (e) {
+        if (!["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported", "auth/cancelled-popup-request"].includes(e.code)) throw e;
+        await goRedirect(provider);
+      }
+    }
+    $("signin-note").textContent = "";
+  } catch (err) {
+    $("signin-note").textContent = "";
+    if (err.code !== "auth/popup-closed-by-user") showSignInError(err);
+  }
+}
+
 function wireUi() {
   UNLOCK_EVENTS.forEach((ev) => document.addEventListener(ev, unlockAudio, true));
   $("mute").addEventListener("click", () => setMuted(!muted));
-  $("signin").addEventListener("click", () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    signInWithPopup(auth, provider).catch((err) => {
-      if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-        $("status").textContent = `Couldn't sign in: ${err.message}`;
-      }
-    });
-  });
+  $("signin").addEventListener("click", signIn);
   $("signout").addEventListener("click", () => signOut(auth));
   $("copy-uid").addEventListener("click", async () => {
     try {
@@ -859,7 +900,11 @@ async function start() {
   $("status").textContent = "Loading…";
   onValue(gameRef, (snap) => onSnapshot(snap.val()));
   try {
-    auth = getAuth(app);
+    auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence], popupRedirectResolver: browserPopupRedirectResolver });
+    if (ssGuard((s) => s.getItem(PENDING)) === "1") $("signin-note").textContent = "Signing in…";
+    getRedirectResult(auth)
+      .catch(showSignInError)
+      .finally(() => { ssGuard((s) => s.removeItem(PENDING)); if ($("signin-note").textContent === "Signing in…") $("signin-note").textContent = ""; });
     onAuthStateChanged(auth, applyAuth, () => { $("about").hidden = false; });
   } catch {
     $("about").hidden = false; // auth failed to start: everyone is a spectator
