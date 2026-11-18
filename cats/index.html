@@ -35,7 +35,7 @@
 </div>
 <button id="muteBtn" class="round ui" aria-label="Mute">🔊</button>
 <button id="gearBtn" class="round ui" aria-label="Settings">⚙️</button>
-<div id="settings" class="ui" hidden><b>Graphics</b><div class="seg"><button data-q="auto">Auto</button><button data-q="high">High</button><button data-q="low">Low</button></div><small id="qualityNote"></small></div>
+<div id="settings" class="ui" hidden><b>Graphics</b><div class="seg"><button data-q="auto">Auto</button><button data-q="high">High</button><button data-q="low">Low</button></div><small id="qualityNote"></small><button id="switchPlayer" class="small" hidden>Switch player</button></div>
 <div id="shop" hidden></div>
 
 <section id="loading" class="screen">
@@ -45,15 +45,18 @@
 
 <section id="locked" class="screen" hidden>
   <div class="card-box">
-    <div class="big">🐱🔒</div>
-    <h1>This is a private game.</h1>
-    <p>Only invited players can come in.</p>
+    <div id="who-box"></div>
+    <div id="locked-head">
+      <div class="big">🐱🔒</div>
+      <h1>This is a private game.</h1>
+      <p>Only invited players can come in.</p>
+    </div>
     <p id="locked-note" class="note"></p>
     <div id="uid-box" hidden>
       <p>Send this code to Dad so he can let you in:</p>
       <code id="my-uid"></code> <button id="copy-uid" class="small">Copy</button>
     </div>
-    <button id="signin" class="main">Sign in with Google</button>
+    <button id="signin" class="link">Grown-up sign-in</button>
     <button id="signout" class="small" hidden>Sign out</button>
   </div>
 </section>

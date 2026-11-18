@@ -1,7 +1,7 @@
 // Firebase glue. Same project + SDK version as chess. Only imported in real mode (never with ?dev=1).
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, get, set, update, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserPopupRedirectResolver, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signInWithCustomToken, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
@@ -36,6 +36,19 @@ export async function signIn() {
   if (needsRedirect()) return goRedirect(provider);
   try { return await signInWithPopup(auth, provider); }
   catch (e) { if (POPUP_FALLBACK.includes(e.code)) return goRedirect(provider); throw e; }
+}
+const LOGIN_URL = "https://davemost.davemost.workers.dev/cats-login";
+// Name + PIN login. Returns { ok } or { status, error, triesLeft?, retryAfter? }.
+export async function pinLogin(player, pin) {
+  let r, body = {};
+  try { r = await fetch(LOGIN_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ player, pin }) }); }
+  catch { return { error: "network" }; }
+  try { body = await r.json(); } catch {}
+  if (r.ok && body.token) {
+    try { await signInWithCustomToken(auth, body.token); return { ok: true }; }
+    catch (e) { return { error: "token", code: e.code }; }
+  }
+  return { status: r.status, error: body.error || "error", triesLeft: body.triesLeft, retryAfter: body.retryAfter };
 }
 export const logOut = () => signOut(auth);
 

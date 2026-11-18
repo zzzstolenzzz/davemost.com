@@ -10,11 +10,16 @@ export const firebaseConfig = {
 };
 
 // Only these Google accounts can play. The SAME uids must also be in database.rules.fragment.json.
-// TODO: add the second daughter's UID here (she can sign in and copy it from the locked screen).
 export const ALLOWED_UIDS = [
   "CRG0lLi3cTUkKFSOcfGEtNBRHbh2", // Dad, for testing
-  "Q07t4Utravf5VKV2PcsWiRLpFIM2", // Reagan
+  "Q07t4Utravf5VKV2PcsWiRLpFIM2", // Reagan (Google)
+  "kidC7a6yKxWnjLbwfSmziuRMGDMN", // Reagan (name + PIN)
+  "kidBEG34MMJ4aqiMfKG6zRHdccz2", // Mac (name + PIN)
 ];
+
+// Name + PIN players. The PINs live only on the server (Worker); never put them here.
+export const PIN_PLAYERS = [{ id: "p1", name: "Reagan" }, { id: "p2", name: "Mac" }];
+export const PIN_UIDS = { kidC7a6yKxWnjLbwfSmziuRMGDMN: "Reagan", kidBEG34MMJ4aqiMfKG6zRHdccz2: "Mac" };
 
 // Cat looks. Swap colors/markings here to match real cat photos later.
 // variants: alternate fur palettes (sold in the shop as "Looks"); the base look above always stays the identity.

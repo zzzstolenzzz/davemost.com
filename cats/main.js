@@ -1,4 +1,5 @@
-import { CATS, ALLOWED_UIDS } from "./config.js";
+import { CATS, ALLOWED_UIDS, PIN_PLAYERS, PIN_UIDS } from "./config.js";
+import { mountPin, fakeLogin } from "./pinui.js";
 import { unlockAudio } from "./audio.js";
 
 const $ = (id) => document.getElementById(id);
@@ -15,6 +16,7 @@ async function boot() {
   const LS = "cats.dev.progress";
   let net = null, user = null, saved = {};
 
+  if (DEV && q.get("pinui") === "1") return lock({ fake: true }); // dev-only: look at the PIN screens without a server
   if (DEV) {
     try { saved = JSON.parse(localStorage.getItem(LS) || "{}"); } catch {}
     user = { uid: "dev", displayName: "Dev" };
@@ -55,7 +57,10 @@ async function boot() {
     cards.forEach((b) => { b.disabled = !!taken[b.dataset.id]; b.querySelector("em").textContent = b.disabled ? "playing now" : ""; });
     if (taken[chosen]) { chosen = CATS.find((c) => !taken[c.id])?.id || chosen; mark(); }
   });
-  $("hello").textContent = user.displayName ? `Hi ${user.displayName.split(" ")[0]}!` : "Hi!";
+  const kidName = PIN_UIDS[user.uid];
+  $("hello").textContent = kidName ? `Hi ${kidName}!` : user.displayName ? `Hi ${user.displayName.split(" ")[0]}!` : "Hi!";
+  $("switchPlayer").hidden = DEV;
+  $("switchPlayer").onclick = () => net.logOut();
   $("signout-start").hidden = DEV;
   $("signout-start").onclick = () => net.logOut();
 
@@ -91,15 +96,19 @@ function signInMessage(err) {
   return { text: storage ? "Sign-in is blocked here. Open davemost.com/cats in Safari and sign in there." : "Sign-in didn't finish. Tap Sign in to try again.", code };
 }
 
-function lock({ uid, note, retry }) {
+function lock({ uid, note, retry, fake }) {
   show("locked");
   const n = $("locked-note");
   n.textContent = "";
   if (note && note.text) { n.append(note.text, " "); const s = document.createElement("small"); s.textContent = "(" + note.code + ")"; n.append(s); }
   else n.textContent = note || "";
   $("uid-box").hidden = !uid;
-  $("signin").hidden = !!uid || (!!note && !retry);
-  $("signin").textContent = retry ? "Try again" : "Sign in with Google";
+  const askPin = !uid && !(note && !retry);
+  $("who-box").hidden = !askPin;
+  $("locked-head").hidden = askPin;
+  if (askPin) mountPin($("who-box"), PIN_PLAYERS, fake ? fakeLogin() : async (p, pin) => (await import("./net.js")).pinLogin(p, pin));
+  $("signin").hidden = !!fake || !!uid || (!!note && !retry);
+  $("signin").textContent = retry ? "Try again" : "Grown-up sign-in";
   $("signout").hidden = !uid;
   if (uid) $("my-uid").textContent = uid;
   $("signin").onclick = async () => {
