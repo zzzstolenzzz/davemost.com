@@ -298,6 +298,31 @@
       text-shadow: 0 0 6px var(--lcd-glow);
     }
 
+    .screen {
+      border: 2px solid var(--lcd-pixel);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bezel);
+      box-shadow: 0 0 16px var(--lcd-glow);
+    }
+
+    .screen img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .shot {
+      margin: 0;
+    }
+
+    .shot figcaption {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      opacity: 0.8;
+      text-align: center;
+    }
+
     footer {
       text-align: center;
       margin-top: 1rem;
@@ -443,6 +468,14 @@
             <text class="legend-text" x="78" y="556">facts feed the system prompt</text>
           </svg>
         </div>
+      </section>
+
+      <section class="panel">
+        <h2>The Result</h2>
+        <figure class="shot">
+          <div class="screen"><img src="projects/img/home-chat.webp" width="1280" height="600" alt="The davemost.com home page in the Tron theme: a neon wordmark, and a chat where the agent answers the question What has Dave built? with a short list of projects and a link to the Projects page." loading="lazy" decoding="async" /></div>
+          <figcaption>The live agent answering a generic question.</figcaption>
+        </figure>
       </section>
 
       <section class="panel">

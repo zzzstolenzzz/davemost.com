@@ -390,3 +390,58 @@ footer p { font-size: 0.9rem; opacity: 0.8; margin: 0; }
   .card:hover,
   .card:focus-within { transform: none; }
 }
+
+/* ---- screenshots: framed "screens" ---- */
+.shots { display: grid; gap: 1.5rem; }
+.shots.phones { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; }
+
+.shot { margin: 0; min-width: 0; }
+.shots.phones .shot { flex: 0 1 260px; }
+.shots.phones .shot.wide { flex: 1 1 100%; max-width: 560px; }
+.shots.pair { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+.screen {
+  position: relative;
+  border: 2px solid var(--lcd-pixel);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bezel);
+  box-shadow: 0 0 16px var(--lcd-glow);
+}
+
+.screen::before {
+  content: "";
+  display: block;
+  height: 22px;
+  border-bottom: 1px solid var(--shell-edge);
+  background:
+    radial-gradient(circle at 14px 50%, var(--btn-a) 4px, transparent 5px),
+    radial-gradient(circle at 30px 50%, var(--accent) 4px, transparent 5px),
+    radial-gradient(circle at 46px 50%, var(--lcd-pixel) 4px, transparent 5px),
+    var(--bezel);
+}
+
+.screen img { display: block; width: 100%; height: auto; }
+
+.screen::after {
+  content: "";
+  position: absolute;
+  inset: 22px 0 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.05) 2px, rgba(0, 0, 0, 0.05) 4px);
+}
+
+.shot figcaption { margin-top: 0.5rem; font-size: 0.95rem; color: var(--muted); text-align: center; }
+.shot figcaption b { color: var(--accent); font-weight: normal; }
+
+/* ---- hub card thumbnails ---- */
+.card .thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--shell-edge);
+  border-radius: 4px;
+}
+
+.card .thumbfig { margin: 0; }
+.card .thumbfig figcaption { margin-top: 0.25rem; font-size: 0.9rem; color: var(--accent); text-align: center; }
