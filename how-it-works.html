@@ -46,6 +46,21 @@
       --ink: #cdefff;
     }
 
+    html[data-theme="bladerunner"] {
+      --page-bg: #000;
+      --shell-a: #120a04;
+      --shell-b: #050201;
+      --shell-edge: #b8743f;
+      --bezel: #0b0603;
+      --lcd-dark: #0a0502;
+      --lcd-pixel: #ffa64d;
+      --lcd-glow: rgba(255, 140, 30, 0.45);
+      --pad: #140a04;
+      --btn-a: #ff8c1a;
+      --btn-b: #6fdcea;
+      --ink: #ffe0bf;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -84,6 +99,16 @@
         transparent 2px,
         rgba(124, 249, 255, 0.035) 2px,
         rgba(124, 249, 255, 0.035) 4px
+      );
+    }
+
+    html[data-theme="bladerunner"] body::before {
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255, 166, 77, 0.035) 2px,
+        rgba(255, 166, 77, 0.035) 4px
       );
     }
 
@@ -175,6 +200,10 @@
 
     html[data-theme="tron"] .panel {
       background: rgba(0, 8, 16, 0.55);
+    }
+
+    html[data-theme="bladerunner"] .panel {
+      background: rgba(20, 8, 0, 0.55);
     }
 
     .panel h2 {
@@ -347,7 +376,8 @@
       box-shadow: 0 1px 0 #4a1a28, inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
 
-    html[data-theme="tron"] .btn-back {
+    html[data-theme="tron"] .btn-back,
+    html[data-theme="bladerunner"] .btn-back {
       background: none;
       color: var(--lcd-pixel);
       border: 1px solid var(--lcd-pixel);
@@ -356,7 +386,8 @@
       text-shadow: 0 0 6px var(--lcd-glow);
     }
 
-    html[data-theme="tron"] .btn-back:active {
+    html[data-theme="tron"] .btn-back:active,
+    html[data-theme="bladerunner"] .btn-back:active {
       transform: none;
       color: #fff;
     }
