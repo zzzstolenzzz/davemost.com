@@ -1235,6 +1235,7 @@ vZJI  k! .)@@i`X@h&quot;. &quot;J&#x27;._]}jB@n. ,J@@1. }@@]...j@$iIWZt  .Z$l  ^
           })
           .then(function (data) {
             var reply = (data && (data.reply || data.message || data.response || data.answer)) || JSON.stringify(data);
+            reply = reply.replace(/\n\s*\n+/g, "\n"); // no blank lines between sentences
             lastExchange = { userText: text, replyText: reply };
             if (tron) transcript = prefix + reply;
             setLoading(false);
