@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Reserve Points Tracker: an unofficial, browser-only tracker for Navy Reserve retirement points that parses PDFs locally and is blocked by a strict CSP from making any network call." />
+  <title>Reserve Points Tracker — davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="projects.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="term-bar">
+      <span class="term-dot a" aria-hidden="true"></span>
+      <span class="term-dot b" aria-hidden="true"></span>
+      <span class="term-dot c" aria-hidden="true"></span>
+      <span class="term-title">~/davemost.com/projects/navy.html</span>
+    </div>
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./">&lt; All projects</a>
+      <a href="../index.html">davemost.com</a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">Project</p>
+      <h1>Reserve Points Tracker</h1>
+      <p class="subtitle">Retirement points, good years, orders and benefits for Navy Reservists, calculated entirely in the browser. No server, no account, no network calls.</p>
+      <ul class="badges">
+        <li class="badge">Local, browser-only app</li>
+        <li class="badge">Zero network access</li>
+        <li class="badge">MIT licensed</li>
+      </ul>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Purpose</h2>
+        <p class="lead">A free, open-source tracker that does Reserve retirement math on your own device, with code small enough to read and check.</p>
+        <p>It was built for U.S. Navy Reservists. It tracks points per anniversary year, good years toward 20, orders, an early retired-pay age, a retired-pay estimate and a Post-9/11 GI Bill tier. Because the inputs are sensitive personal records, privacy was the first design constraint.</p>
+        <p class="note"><b>Unofficial tool. Not affiliated with or endorsed by the U.S. Navy or DoD.</b> Figures are rule-of-thumb estimates, not advice. Verify everything with your NOSC/PSD. The app uses no Navy or DoD seals, logos or branding.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What it does</h2>
+        <ul class="list cols">
+          <li><b>Profile.</b> Join date, retirement plan (BRS or High-3), current grade, planned active-duty days per year.</li>
+          <li><b>Points and good years.</b> Points per anniversary year, good years (50 or more), and the 130-point cap on inactive points.</li>
+          <li><b>Orders.</b> Start, end, type, authority, verified flag, and whether each order counts toward an earlier retired-pay age.</li>
+          <li><b>Statement check.</b> If orders cover more AT/ADT days than the points statement shows, the year is raised to match and a warning says to ask NOSC/PSD to correct it. Orders are treated as fact.</li>
+          <li><b>Early retired-pay age.</b> Three months earlier than 60 for each aggregate 90 days of qualifying duty, using fiscal-year rules from 10 USC 12731(f).</li>
+          <li><b>Retired-pay estimate.</b> Points divided by 360 gives equivalent years. That is multiplied by 2.0% (BRS) or 2.5% (High-3) and a base pay figure from the public 2026 pay table.</li>
+          <li><b>GI Bill tier.</b> Qualifying days map to the 50% to 100% tiers, with the rules for boot camp and A-School days built in.</li>
+          <li><b>Documents folder.</b> Point it at a folder of PDFs. It marks each file New, Changed, Unchanged or Missing, and reads new ones to sort them into Leave and Earnings Statements, orders, evaluations, other, or unreadable scans.</li>
+          <li><b>Orders import.</b> Orders found in PDFs show as a review list. Nothing is added until you tick rows. Likely duplicates start unticked.</li>
+          <li><b>Backup.</b> Export and import as a validated JSON file, plus a button to clear everything from the browser.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Sample data</h2>
+        <p><b>Everything below is sample data.</b> These are made-up, round numbers from the app's built-in demo mode, run through the app's own calculation code. They are not anyone's real service record.</p>
+        <div class="table-wrap">
+          <table class="sample">
+            <thead>
+              <tr><th scope="col">Check</th><th scope="col">Sample input</th><th scope="col">Sample result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Good years</td><td>Four finished years with 77, 77, 79 and 107 points (the last after the statement check below)</td><td>4 good years (50+ points each)</td></tr>
+              <tr><td>Statement vs orders</td><td>Year 2018&ndash;19: statement shows 83 points and 10 AT/ADT points. Orders cover 34 days.</td><td>Year raised to 107 points, with a warning to get the statement corrected</td></tr>
+              <tr><td>Early retired-pay age</td><td>96 qualifying days after 28 Jan 2008</td><td>3 months earlier than age 60</td></tr>
+              <tr><td>GI Bill tier</td><td>96 qualifying days</td><td>50% tier, 84 more days to reach 60%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Stack</h2>
+        <ul class="chips" aria-label="Stack">
+          <li class="chip">Vanilla JS (ES modules)</li>
+          <li class="chip">IndexedDB</li>
+          <li class="chip">File System Access API</li>
+          <li class="chip">pdf.js 4.4.168 (vendored)</li>
+          <li class="chip">Web Worker</li>
+          <li class="chip">Content-Security-Policy</li>
+          <li class="chip">node:test (66 tests)</li>
+          <li class="chip">No build step</li>
+          <li class="chip">No dependencies</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Architecture</h2>
+        <p class="flow-label">From PDF to dashboard</p>
+        <div class="flow">
+          <div class="node"><b>Documents folder</b><span>read-only access</span></div>
+          <div class="arrow"><small>PDF bytes</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>pdf.js</b><span>local worker extracts text</span></div>
+          <div class="arrow"><small>text</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Classify + parse</b><span>LES, orders, other</span></div>
+        </div>
+        <div class="flow" style="margin-top:0.5rem">
+          <div class="node"><b>Review list</b><span>you tick what to import</span></div>
+          <div class="arrow"><small>save</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>IndexedDB</b><span>in this browser only</span></div>
+          <div class="arrow"><small>load</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>calc.js</b><span>pure math, then the dashboard</span></div>
+        </div>
+        <p class="note" style="margin-top:1rem">Code layout: <code>calc.js</code> holds all the math with no DOM or storage. <code>db.js</code> holds all storage. Parsers, classifier and backup logic are also pure modules, so they run under Node for testing.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Security &amp; privacy</h2>
+        <ul class="list">
+          <li><b>No server and no database.</b> The app is plain HTML, CSS and JavaScript files. Data lives in the browser's own IndexedDB on your device.</li>
+          <li><b>The browser enforces "no network".</b> The page's Content-Security-Policy sets <code>connect-src 'none'</code>, so it cannot make requests. It also blocks scripts, styles and fonts from anywhere but its own files and sets <code>object-src 'none'</code> and <code>base-uri 'none'</code>.</li>
+          <li><b>No analytics, tracking or cookies.</b></li>
+          <li><b>Minimal third-party code.</b> The only dependency is pdf.js, copied into the repo with its Apache-2.0 license and served from there, never from a CDN.</li>
+          <li><b>Read-only folder access.</b> It asks the browser for read permission only. It never writes, moves, renames or uploads a file.</li>
+          <li><b>SSN-shaped strings are masked</b> in text the parsers store.</li>
+          <li><b>Hardened backup import.</b> It rejects anything that isn't a valid backup, keeps only known fields, and caps the row count.</li>
+          <li><b>Small enough to audit.</b> The README points to three files to read: the policy, the storage module and the math module.</li>
+        </ul>
+        <p class="note">Because the only copy of your data is in the browser, clearing site data erases it. Use Export backup.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Notable engineering decisions</h2>
+        <ul class="list">
+          <li><b>Privacy enforced by the browser, not by promise.</b> A strict CSP turns "we don't send your data anywhere" into something the browser guarantees.</li>
+          <li><b>Pure, tested core.</b> Calculation, parsing, classification, ingest and backup are DOM-free ES modules with unit tests. All test data is synthetic. No real documents are used.</li>
+          <li><b>Humans stay in the loop.</b> Parsed orders are proposals. Duplicates are flagged and nothing imports without a tick.</li>
+          <li><b>Idempotent scanning.</b> Files are cached by path, size and modified date, and parsed statements are keyed by a SHA-256 of the file, so re-scans never re-read or double-count.</li>
+          <li><b>Additive schema migrations.</b> Each database version only creates what is missing, so existing data is never touched.</li>
+          <li><b>Graceful degradation.</b> Chrome and Edge can remember the chosen folder. Firefox and Safari fall back to a one-visit folder picker.</li>
+          <li><b>Honest uncertainty.</b> The early-retirement estimate depends on which orders legally count, so each order is marked yes, no or unknown and the app shows the effect of the unknowns.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Status</h2>
+        <p>Working, with 66 passing unit tests. It is a local, browser-only app with no build step. It runs from any static web server, for example <code>python -m http.server</code>. It is not hosted on this site, so there is no live link.</p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="btn-back" href="./">&lt; All projects</a>
+      <a class="btn-back" href="../index.html">&lt; Back to davemost.com</a>
+      <p>&copy; <span id="y"></span> davemost.com</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Projects Dave Most has designed and built: a serverless AI agent, a study app, a real-time chess game, a 3D browser game, and a privacy-first tracker." />
+  <title>Projects — davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="projects.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="term-bar">
+      <span class="term-dot a" aria-hidden="true"></span>
+      <span class="term-dot b" aria-hidden="true"></span>
+      <span class="term-dot c" aria-hidden="true"></span>
+      <span class="term-title">~/davemost.com/projects/</span>
+    </div>
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../index.html">&lt; davemost.com</a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">Portfolio</p>
+      <h1>Things I've Built</h1>
+      <p class="subtitle">I'm a program manager with a CS degree. These are projects I designed and built end to end: the problem, the stack, the security model, and the trade-offs.</p>
+    </header>
+
+    <main>
+      <div class="cards">
+        <article class="card">
+          <h2><a href="../how-it-works.html">davemost.com + AI Agent</a></h2>
+          <p>This site, plus a self-built chat agent on a Cloudflare Worker that only talks about me and has a teach-by-text loop.</p>
+          <ul class="chips" aria-label="Stack">
+            <li class="chip">Cloudflare Workers</li>
+            <li class="chip">Workers KV</li>
+            <li class="chip">Gemini 2.5 Flash</li>
+            <li class="chip">Telegram Bot API</li>
+            <li class="chip">GitHub Pages</li>
+          </ul>
+          <span class="more" aria-hidden="true">Read the write-up &gt;</span>
+        </article>
+
+        <article class="card">
+          <h2><a href="pmp.html">PMP Practice</a></h2>
+          <p>A private study app for PMP exam prep: weighted quizzes, progress stats, and a compact "study brief" export.</p>
+          <ul class="chips" aria-label="Stack">
+            <li class="chip">Vanilla JS</li>
+            <li class="chip">Firebase Auth</li>
+            <li class="chip">Realtime Database</li>
+            <li class="chip">Installable web app</li>
+          </ul>
+          <span class="more" aria-hidden="true">Read the write-up &gt;</span>
+        </article>
+
+        <article class="card">
+          <h2><a href="chess.html">Doodle Chess</a></h2>
+          <p>Real-time, hand-drawn chess for two approved players. Anyone can watch live. Move alerts arrive as push notifications.</p>
+          <ul class="chips" aria-label="Stack">
+            <li class="chip">chess.js</li>
+            <li class="chip">Firebase</li>
+            <li class="chip">Cloudflare Worker</li>
+            <li class="chip">Web Push</li>
+            <li class="chip">Web Audio</li>
+          </ul>
+          <span class="more" aria-hidden="true">Read the write-up &gt;</span>
+        </article>
+
+        <article class="card">
+          <h2><a href="cats.html">Cat Adventure</a></h2>
+          <p>A private 3D browser game with live multiplayer, locked to approved players by a server-side login.</p>
+          <ul class="chips" aria-label="Stack">
+            <li class="chip">three.js</li>
+            <li class="chip">Custom shaders</li>
+            <li class="chip">Firebase</li>
+            <li class="chip">Cloudflare Worker</li>
+            <li class="chip">Durable Objects</li>
+          </ul>
+          <span class="more" aria-hidden="true">Read the write-up &gt;</span>
+        </article>
+
+        <article class="card">
+          <h2><a href="navy.html">Reserve Points Tracker</a></h2>
+          <p>A browser-only tracker for Navy Reserve retirement points. It reads PDFs locally and cannot make network calls.</p>
+          <ul class="chips" aria-label="Stack">
+            <li class="chip">Vanilla JS</li>
+            <li class="chip">IndexedDB</li>
+            <li class="chip">pdf.js (vendored)</li>
+            <li class="chip">Strict CSP</li>
+            <li class="chip">node:test</li>
+          </ul>
+          <span class="more" aria-hidden="true">Read the write-up &gt;</span>
+        </article>
+      </div>
+    </main>
+
+    <footer>
+      <a class="btn-back" href="../index.html">&lt; Back to davemost.com</a>
+      <p>&copy; <span id="y"></span> davemost.com</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

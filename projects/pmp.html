@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PMP Practice: a private, installable study app for PMP exam prep, built with vanilla JS and Firebase and locked to one account by database rules." />
+  <title>PMP Practice — davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="projects.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="term-bar">
+      <span class="term-dot a" aria-hidden="true"></span>
+      <span class="term-dot b" aria-hidden="true"></span>
+      <span class="term-dot c" aria-hidden="true"></span>
+      <span class="term-title">~/davemost.com/projects/pmp.html</span>
+    </div>
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./">&lt; All projects</a>
+      <a href="../index.html">davemost.com</a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">Project</p>
+      <h1>PMP Practice</h1>
+      <p class="subtitle">A private study app for the PMP exam. It focuses on what I haven't seen or keep missing, and shows whether I'm improving.</p>
+      <ul class="badges">
+        <li class="badge">Private app</li>
+        <li class="badge">Installable web app</li>
+        <li class="badge">No build step</li>
+      </ul>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Purpose</h2>
+        <p class="lead">Practice questions for the PMP exam, with my own history of what I've seen, missed and flagged, stored in my own database.</p>
+        <p>The app weights practice toward unseen and missed questions, scores each session by domain, and exports a compact summary I can paste into an AI chat for tutoring.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What it does</h2>
+        <ul class="list cols">
+          <li><b>Practice modes.</b> Mix, Unseen, Missed, Flagged, or one domain. Sessions of 10, 20 or 50 questions.</li>
+          <li><b>Weighted "Mix".</b> Questions I haven't seen, or got wrong last time, are three times as likely to come up.</li>
+          <li><b>Single and multi-select.</b> Multi-answer questions say "Choose 2" and need an exact match to count.</li>
+          <li><b>Explanations.</b> Optional "AI summary" cards (why, why not each wrong choice, a one-line tip) with the original explanation collapsed underneath.</li>
+          <li><b>Flag for review.</b> Star any question and drill the flagged set later.</li>
+          <li><b>Results.</b> Score, by-domain breakdown, and a "Redo missed" button.</li>
+          <li><b>Stats.</b> Score per session (SVG chart with a 5-session average), accuracy by domain, answered count, share of the bank seen, day streak.</li>
+          <li><b>Trend.</b> Home screen shows accuracy over the last 100 answers versus the 100 before.</li>
+          <li><b>Study brief.</b> One tap copies a short plain-text summary: weakest sub-topics, questions I keep missing, flagged items.</li>
+          <li><b>Import.</b> Paste or upload JSON. It is validated first and reports valid and invalid counts before anything is merged.</li>
+        </ul>
+        <p class="note">The question bank lives in the database, not in the repository. The repo ships only eight original sample questions for demo mode.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Stack</h2>
+        <ul class="chips" aria-label="Stack">
+          <li class="chip">Vanilla JS (ES modules)</li>
+          <li class="chip">Firebase Authentication (Google)</li>
+          <li class="chip">Firebase Realtime Database</li>
+          <li class="chip">Firebase JS SDK 10.12</li>
+          <li class="chip">Web app manifest (installable)</li>
+          <li class="chip">Inline SVG charts</li>
+          <li class="chip">No framework, no build</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Architecture</h2>
+        <p class="flow-label">Normal mode</p>
+        <div class="flow">
+          <div class="node"><b>Browser</b><span>static pages on GitHub Pages</span></div>
+          <div class="arrow"><small>Google sign-in</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Firebase Auth</b><span>identifies the account</span></div>
+          <div class="arrow"><small>read / write</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Realtime Database</b><span>questions, stats, sessions</span></div>
+        </div>
+        <p class="flow-label">Demo mode (localhost only, <code>?demo=1</code>)</p>
+        <div class="flow">
+          <div class="node"><b>Browser</b><span>same UI code</span></div>
+          <div class="arrow"><small>same API</small><i aria-hidden="true"></i></div>
+          <div class="node dim"><b>localStorage</b><span>8 built-in sample questions</span></div>
+        </div>
+        <p class="note" style="margin-top:1rem">All reads and writes go through one small storage module with two interchangeable implementations. The UI never knows which one it is using.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Security &amp; privacy</h2>
+        <ul class="list">
+          <li><b>One account only.</b> The page checks the signed-in account, and the database rules enforce it. Other accounts see only "This app is private."</li>
+          <li><b>Deny by default.</b> The database root is closed to reads and writes. Only the study data branch opens, and only to that one account.</li>
+          <li><b>Not indexed.</b> The page carries a <code>noindex</code> tag.</li>
+          <li><b>No HTML injection.</b> All text is added with <code>textContent</code>, never <code>innerHTML</code>. Question images load only from <code>https://</code> URLs.</li>
+          <li><b>Validated imports.</b> Imports check types and ranges, strip characters that are illegal in database keys, cap AI-summary fields, and never overwrite existing history.</li>
+          <li><b>Destructive actions are gated.</b> Deleting the bank means typing DELETE.</li>
+          <li><b>Demo mode is local.</b> It only activates on localhost.</li>
+        </ul>
+        <p class="note">The Firebase web config is public by design. Access control lives in the database rules, not in hiding that config.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Notable engineering decisions</h2>
+        <ul class="list">
+          <li><b>Rules, not just UI.</b> Locking the screen is cosmetic. The real gate is server-side database rules.</li>
+          <li><b>One storage seam.</b> Firebase and the local demo implement the same async API, so I can test the whole UI offline without touching real data.</li>
+          <li><b>Targeted practice.</b> Weighted sampling without replacement puts study time on weak spots instead of random recall.</li>
+          <li><b>Sessions stored as records.</b> Trend and streak stats are computed from saved session records rather than a running counter, so they can be recomputed or imported.</li>
+          <li><b>Safe rendering helper.</b> One tiny element builder creates every DOM node. That makes unsafe HTML injection structurally hard instead of a code-review chore.</li>
+          <li><b>Tutoring loop.</b> The study brief is deliberately short so it costs few tokens when pasted into an AI chat.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Status</h2>
+        <p>Working. It is a private app behind a Google sign-in restricted to one account, so there is no public link.</p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="btn-back" href="./">&lt; All projects</a>
+      <a class="btn-back" href="../index.html">&lt; Back to davemost.com</a>
+      <p>&copy; <span id="y"></span> davemost.com</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

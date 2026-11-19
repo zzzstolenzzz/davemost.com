@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Cat Adventure: a private 3D browser game built with three.js, custom shaders, live multiplayer, and a server-side PIN login with brute-force lockout." />
+  <title>Cat Adventure — davemost.com</title>
+  <script>
+    (function () {
+      var t = "tron";
+      try { t = localStorage.getItem("davemost-theme") || "tron"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Orbitron:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="projects.css" />
+</head>
+<body>
+  <div class="page">
+    <div class="term-bar">
+      <span class="term-dot a" aria-hidden="true"></span>
+      <span class="term-dot b" aria-hidden="true"></span>
+      <span class="term-dot c" aria-hidden="true"></span>
+      <span class="term-title">~/davemost.com/projects/cats.html</span>
+    </div>
+
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="./">&lt; All projects</a>
+      <a href="../index.html">davemost.com</a>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">Project</p>
+      <h1>Cat Adventure</h1>
+      <p class="subtitle">A 3D cat game that runs in a mobile browser: explore an island, find fish, shop for upgrades, and see other players live.</p>
+      <ul class="badges">
+        <li class="badge">Private family game</li>
+        <li class="badge">Touch-first 3D</li>
+        <li class="badge">Live multiplayer</li>
+      </ul>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>Purpose</h2>
+        <p class="lead">A private 3D game for my family, playable on a tablet with no install, where only approved players can get in.</p>
+        <p>It is a showcase for two things: real-time 3D graphics that stay smooth on mobile hardware, and a login system that keeps a young audience safe without making sign-in painful.</p>
+      </section>
+
+      <section class="panel">
+        <h2>What it does</h2>
+        <ul class="list cols">
+          <li><b>Free-roam 3D island.</b> Third-person cat, pond, bridge, cottage, trees, butterflies and wind-blown grass.</li>
+          <li><b>Goals and rewards.</b> Find 10 hidden fish, collect coins, and earn a bonus for finding them all.</li>
+          <li><b>Shop.</b> Hats, glasses, neck and back items, fur "looks" and effects across four rarity tiers, plus six upgrades with three levels each (speed, jump with a double-jump, coin magnet, fish radar, glide, lucky paw).</li>
+          <li><b>Live multiplayer.</b> Players see each other's cats move. Off-screen pointers and a mini-map help find the other player.</li>
+          <li><b>Touch-first controls.</b> Floating joystick, jump button and drag-to-orbit camera, with keyboard and mouse as a fallback.</li>
+          <li><b>Saved progress.</b> Fish, coins, owned items, equipped items and upgrades are saved per player.</li>
+          <li><b>Graphics settings.</b> Auto, High or Low quality.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Stack</h2>
+        <ul class="chips" aria-label="Stack">
+          <li class="chip">three.js 0.170</li>
+          <li class="chip">Custom GLSL shaders</li>
+          <li class="chip">Vanilla JS (ES modules)</li>
+          <li class="chip">Web Audio</li>
+          <li class="chip">Firebase Auth</li>
+          <li class="chip">Firebase Realtime Database</li>
+          <li class="chip">Cloudflare Worker</li>
+          <li class="chip">Durable Objects</li>
+          <li class="chip">WebCrypto (JWT signing)</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Architecture</h2>
+        <p class="flow-label">Signing in</p>
+        <div class="flow">
+          <div class="node"><b>Browser</b><span>player picks a name and enters a PIN</span></div>
+          <div class="arrow"><small>POST over HTTPS</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Cloudflare Worker</b><span>checks the PIN on the server</span></div>
+          <div class="arrow"><small>attempt count</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Durable Object</b><span>lockout counters</span></div>
+        </div>
+        <div class="flow" style="margin-top:0.5rem">
+          <div class="node"><b>Cloudflare Worker</b><span>signs a Firebase custom token</span></div>
+          <div class="arrow"><small>token</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Browser</b><span>signs in to Firebase</span></div>
+          <div class="arrow"><small>token on every request</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Realtime Database</b><span>rules allow approved accounts only</span></div>
+        </div>
+        <p class="flow-label">Playing</p>
+        <div class="flow">
+          <div class="node"><b>three.js client</b><span>generates the world in code</span></div>
+          <div class="arrow"><small>position + progress</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Realtime Database</b><span>presence + saved progress</span></div>
+          <div class="arrow"><small>live updates</small><i aria-hidden="true"></i></div>
+          <div class="node"><b>Other players</b><span>see your cat move</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Security &amp; privacy</h2>
+        <p>This is a private family game. The page shows a locked screen to anyone who isn't an approved player, and it is excluded from search engines. Nothing about the players or their data is shown here.</p>
+        <ul class="list">
+          <li><b>PINs are checked on the server.</b> They are never shipped to the browser. They live only as Worker secrets.</li>
+          <li><b>Constant-time comparison.</b> The PIN check compares hashes byte by byte so response timing leaks nothing.</li>
+          <li><b>Brute-force lockout.</b> After five wrong tries a player is locked out for 15 minutes. There is also a per-IP hourly cap. One Durable Object holds all counters so every attempt is decided atomically.</li>
+          <li><b>A real identity, not a shared password.</b> A correct PIN earns a Firebase custom token (an RS256-signed JWT) minted by the Worker. After that, the database sees a normal signed-in user.</li>
+          <li><b>Database rules are the real gate.</b> Only approved accounts can read the game data. A player can write only to their own records, and every write is validated for type, range and allowed fields.</li>
+          <li><b>Fails closed.</b> If the Worker's configuration is missing or malformed, it returns "unavailable" instead of letting anyone in.</li>
+          <li><b>CORS is locked</b> to this site (and localhost for development).</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Notable engineering decisions</h2>
+        <ul class="list">
+          <li><b>Security that fits the audience.</b> A 4-digit PIN is weak on its own, but it is easy for a child. So the safety comes from the server-side lockout and the database rules, not from the PIN staying secret.</li>
+          <li><b>No art assets.</b> The cat, island, trees, accessories and textures are generated in code. The cat is a single smooth skinned mesh built from an implicit surface, with a procedural skeleton. No 3D model files are downloaded.</li>
+          <li><b>Mobile performance first.</b> Instanced meshes, merged geometry, one-draw-call particles, and a quality system that lowers render resolution when frame time slips. It falls back to the Low tier only in Auto mode.</li>
+          <li><b>Two render paths.</b> High adds post-processing (bloom, FXAA, colour grade, vignette, ACES tone mapping) and bigger shadow maps. Low draws straight to the screen.</li>
+          <li><b>Presence per page load.</b> The same account on two devices shows two cats. Disconnects clean up automatically, and stale remote cats time out.</li>
+          <li><b>Data-driven shop.</b> Items, prices, rarities and upgrades are plain data, so tuning the game never touches game logic.</li>
+        </ul>
+      </section>
+
+      <section class="panel">
+        <h2>Status &amp; link</h2>
+        <p>Playable. It is private, locked to approved players, so there is no public link.</p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="btn-back" href="./">&lt; All projects</a>
+      <a class="btn-back" href="../index.html">&lt; Back to davemost.com</a>
+      <p>&copy; <span id="y"></span> davemost.com</p>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var y = document.getElementById("y");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,392 @@
+/* Shared styles for /projects/*. Same look as how-it-works.html: VT323 + Orbitron, scanlines, three themes
+   (Tron default / Game Boy / Blade Runner) switched by html[data-theme], set from localStorage "davemost-theme". */
+
+:root {
+  /* Game Boy (LCD greens on a dark case) */
+  --page-bg: #1e1c18;
+  --bezel: #2a2f24;
+  --shell-edge: #5c6148;
+  --lcd-pixel: #9bbc0f;
+  --lcd-glow: rgba(155, 188, 15, 0.35);
+  --panel-bg: rgba(15, 56, 15, 0.35);
+  --ink: #d6e2b2;
+  --muted: #aab58a;
+  --accent: #e3d58f;
+  --btn-a: #8b2942;
+  --scan: rgba(255, 255, 255, 0.03);
+}
+
+html[data-theme="tron"] {
+  --page-bg: #000810;
+  --bezel: #00090e;
+  --shell-edge: #0fd8ec;
+  --lcd-pixel: #7cf9ff;
+  --lcd-glow: rgba(0, 229, 255, 0.45);
+  --panel-bg: rgba(0, 8, 16, 0.55);
+  --ink: #cdefff;
+  --muted: #8fbccd;
+  --accent: #ff8c1a;
+  --btn-a: #00c8e0;
+  --scan: rgba(124, 249, 255, 0.035);
+}
+
+html[data-theme="bladerunner"] {
+  --page-bg: #000;
+  --bezel: #0b0603;
+  --shell-edge: #b8743f;
+  --lcd-pixel: #ffa64d;
+  --lcd-glow: rgba(255, 140, 30, 0.45);
+  --panel-bg: rgba(20, 8, 0, 0.55);
+  --ink: #ffe0bf;
+  --muted: #d9aa7c;
+  --accent: #6fdcea;
+  --btn-a: #ff8c1a;
+  --scan: rgba(255, 166, 77, 0.035);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  font-family: "VT323", ui-monospace, monospace;
+  font-size: 20px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--page-bg);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scan) 2px, var(--scan) 4px);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  background-image: radial-gradient(ellipse 80% 40% at 50% 0%, var(--lcd-glow), transparent 70%);
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 16px 3rem;
+}
+
+a { color: var(--lcd-pixel); }
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---- terminal title bar ---- */
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--shell-edge);
+  border-radius: 6px;
+  background: var(--bezel);
+  font-size: 14px;
+  letter-spacing: 0.05em;
+}
+
+.term-dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+.term-dot.a { background: var(--btn-a); }
+.term-dot.b { background: var(--accent); }
+.term-dot.c { background: var(--lcd-pixel); }
+
+.term-title {
+  margin-left: 0.4rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, "Cascadia Mono", "Consolas", "Courier New", monospace;
+}
+
+/* ---- breadcrumbs ---- */
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.05rem;
+}
+
+.crumbs a { text-decoration: none; text-shadow: 0 0 6px var(--lcd-glow); }
+.crumbs a:hover { text-decoration: underline; }
+
+/* ---- hero ---- */
+.hero { text-align: center; margin-bottom: 2rem; }
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero h1 {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5.5vw, 3rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lcd-pixel);
+  text-shadow: 0 0 12px var(--lcd-glow), 0 0 30px var(--lcd-glow);
+  margin: 0 0 0.6rem;
+  overflow-wrap: anywhere;
+}
+
+.hero .subtitle { font-size: 1.2rem; max-width: 680px; margin: 0 auto 1rem; }
+
+.badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.7rem;
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+/* ---- panels ---- */
+.panel {
+  border: 1px solid var(--lcd-pixel);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 0 16px var(--lcd-glow), inset 0 0 24px rgba(0, 0, 0, 0.35);
+  padding: 1.5rem 1.5rem 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.panel h2 {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--lcd-pixel);
+  text-shadow: 0 0 8px var(--lcd-glow);
+  margin: 0 0 1rem;
+}
+
+.panel p { margin: 0 0 1rem; }
+.panel p:last-child,
+.panel ul:last-child { margin-bottom: 0; }
+
+.lead { font-size: 1.25rem; }
+
+.note { color: var(--muted); font-size: 0.95rem; }
+
+/* ---- bullet lists ---- */
+.list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.list li { position: relative; padding-left: 1.4rem; }
+
+.list li::before {
+  content: "\25B8";
+  position: absolute;
+  left: 0;
+  color: var(--lcd-pixel);
+  text-shadow: 0 0 6px var(--lcd-glow);
+}
+
+.list li b { color: var(--accent); font-weight: normal; }
+
+.list.cols { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.6rem 1.5rem; }
+
+/* ---- stack chips ---- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0; padding: 0; list-style: none; }
+
+.chip {
+  display: inline-block;
+  padding: 0 0.65rem;
+  border: 1px solid var(--shell-edge);
+  border-radius: 4px;
+  background: var(--bezel);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* ---- architecture flow (HTML, so it reflows on phones) ---- */
+.flow-label {
+  margin: 1.25rem 0 0.5rem;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.flow-label:first-of-type { margin-top: 0; }
+
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.5rem; }
+
+.flow .node {
+  flex: 1 1 150px;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--lcd-pixel);
+  border-radius: 8px;
+  background: var(--bezel);
+  text-align: center;
+}
+
+.flow .node b {
+  display: block;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lcd-pixel);
+  overflow-wrap: anywhere;
+}
+
+.flow .node span { display: block; font-size: 1rem; color: var(--ink); }
+
+.flow .arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  min-width: 4.5rem;
+  text-align: center;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.flow .arrow small { display: block; font-size: 0.9rem; }
+.flow .arrow i { font-style: normal; font-size: 1.3rem; }
+.flow .arrow i::before { content: "\2192"; }
+
+.flow .node.dim { border-style: dashed; border-color: var(--accent); }
+.flow .node.dim b { color: var(--accent); }
+
+/* ---- hub cards ---- */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 1.75rem; }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border: 1px solid var(--lcd-pixel);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 0 12px var(--lcd-glow), inset 0 0 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card:hover,
+.card:focus-within {
+  transform: translateY(-2px);
+  box-shadow: 0 0 26px var(--lcd-glow), inset 0 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.card h2 {
+  margin: 0;
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px var(--lcd-glow);
+}
+
+.card h2 a { color: var(--lcd-pixel); text-decoration: none; }
+.card h2 a::after { content: ""; position: absolute; inset: 0; } /* whole card is clickable */
+.card p { margin: 0; }
+.card .chips { margin-top: auto; }
+.card .more { color: var(--accent); font-size: 1.05rem; }
+
+/* ---- sample-data table ---- */
+.table-wrap { overflow-x: auto; }
+
+table.sample {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.05rem;
+}
+
+table.sample th,
+table.sample td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid var(--shell-edge); vertical-align: top; }
+table.sample th { font-family: "Orbitron", sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+
+/* ---- footer ---- */
+footer { text-align: center; margin-top: 1rem; }
+
+.btn-back {
+  display: inline-block;
+  font-family: "VT323", monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  padding: 0.6rem 1.4rem;
+  margin: 0 0.25rem 1rem;
+  border-radius: 20px;
+  text-decoration: none;
+  color: #f2e9dc;
+  background: linear-gradient(180deg, #a53855 0%, var(--btn-a) 55%, #6f2235 100%);
+  box-shadow: 0 3px 0 #4a1a28, inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-back:active { transform: translateY(2px); box-shadow: 0 1px 0 #4a1a28, inset 0 1px 0 rgba(255, 255, 255, 0.15); }
+
+html[data-theme="tron"] .btn-back,
+html[data-theme="bladerunner"] .btn-back {
+  background: none;
+  color: var(--lcd-pixel);
+  border: 1px solid var(--lcd-pixel);
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: 0 0 6px var(--lcd-glow);
+}
+
+html[data-theme="tron"] .btn-back:active,
+html[data-theme="bladerunner"] .btn-back:active { transform: none; color: #fff; }
+
+footer p { font-size: 0.9rem; opacity: 0.8; margin: 0; }
+
+/* ---- phones ---- */
+@media (max-width: 720px) {
+  body { font-size: 18px; }
+  .panel { padding: 1.1rem 1rem 1.25rem; }
+  .cards { grid-template-columns: 1fr; }
+  .flow .node { flex-basis: 100%; }
+  .flow .arrow { flex-basis: 100%; min-width: 0; }
+  .flow .arrow i::before { content: "\2193"; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+  .card:hover,
+  .card:focus-within { transform: none; }
+}
