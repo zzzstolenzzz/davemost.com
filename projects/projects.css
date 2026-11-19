@@ -445,3 +445,23 @@ footer p { font-size: 0.9rem; opacity: 0.8; margin: 0; }
 
 .card .thumbfig { margin: 0; }
 .card .thumbfig figcaption { margin-top: 0.25rem; font-size: 0.9rem; color: var(--accent); text-align: center; }
+
+/* ---- Navy gallery ---- */
+.gal-title {
+  margin: 1.5rem 0 0.75rem;
+  font-family: "Orbitron", sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.gallery .shots { margin-bottom: 0.5rem; }
+.gallery .shots.pair { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+@media (max-width: 720px) {
+  /* small screens: keep text readable and let each screenshot scroll sideways inside its frame */
+  .gallery .screen { overflow-x: auto; }
+  .gallery .screen img { width: 640px; max-width: none; }
+  .gallery .shot.wide .screen img { width: 900px; }
+}
